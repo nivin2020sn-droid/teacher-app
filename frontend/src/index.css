@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    direction: rtl;
+    font-family: "Tajawal", "Cairo", -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: hsl(var(--app-bg));
+    color: hsl(var(--foreground));
+}
+
+* {
+    box-sizing: border-box;
+}
+
+@layer base {
+    :root {
+        /* App theme — pastel violet, light + warm */
+        --app-bg: 252 35% 97%;
+        --background: 0 0% 100%;
+        --foreground: 240 12% 18%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 240 12% 18%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 12% 18%;
+
+        /* Primary = violet (dynamic via JS for settings) */
+        --primary: 256 84% 68%;
+        --primary-foreground: 0 0% 100%;
+        --primary-soft: 256 100% 95%;
+
+        --secondary: 252 30% 95%;
+        --secondary-foreground: 240 14% 22%;
+
+        --muted: 252 25% 95%;
+        --muted-foreground: 240 8% 45%;
+
+        --accent: 252 50% 96%;
+        --accent-foreground: 256 84% 50%;
+
+        --destructive: 0 80% 62%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 250 30% 92%;
+        --input: 250 30% 92%;
+        --ring: 256 84% 68%;
+
+        /* Pastel accents for stat cards */
+        --pastel-blue-bg: 230 100% 96%;
+        --pastel-blue-fg: 230 70% 50%;
+        --pastel-red-bg: 0 100% 96%;
+        --pastel-red-fg: 354 75% 58%;
+        --pastel-green-bg: 150 60% 94%;
+        --pastel-green-fg: 152 56% 38%;
+        --pastel-yellow-bg: 42 100% 94%;
+        --pastel-yellow-fg: 35 85% 45%;
+        --pastel-pink-bg: 330 100% 96%;
+        --pastel-pink-fg: 330 70% 55%;
+
+        --chart-1: 256 84% 68%;
+        --chart-2: 173 58% 50%;
+        --chart-3: 35 85% 60%;
+        --chart-4: 330 70% 65%;
+        --chart-5: 200 75% 60%;
+        --radius: 1rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        background-color: hsl(var(--app-bg));
+        @apply text-foreground;
+    }
+
+    /* Make sure focus rings respect RTL */
+    button:focus-visible,
+    a:focus-visible {
+        outline: 2px solid hsl(var(--ring) / 0.5);
+        outline-offset: 2px;
+        border-radius: 8px;
+    }
+}
+
+@layer utilities {
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .soft-shadow {
+        box-shadow:
+            0 1px 2px rgba(67, 56, 202, 0.04),
+            0 8px 24px -8px rgba(124, 92, 255, 0.12);
+    }
+    .soft-shadow-lg {
+        box-shadow:
+            0 2px 6px rgba(67, 56, 202, 0.06),
+            0 18px 40px -12px rgba(124, 92, 255, 0.22);
+    }
+
+    .subject-hero-bg {
+        background:
+            radial-gradient(
+                circle at 80% 20%,
+                hsl(var(--primary) / 0.18) 0%,
+                transparent 55%
+            ),
+            radial-gradient(
+                circle at 15% 90%,
+                hsl(330 100% 85% / 0.35) 0%,
+                transparent 55%
+            ),
+            linear-gradient(
+                135deg,
+                hsl(var(--primary-soft)) 0%,
+                hsl(252 100% 97%) 60%,
+                hsl(280 100% 97%) 100%
+            );
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}
