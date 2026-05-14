@@ -106,8 +106,12 @@ async def get_current_user(request: Request) -> dict:
 
 
 def require_admin(user: dict = Depends(get_current_user)) -> dict:
-    """Only the real admin (not admin-previewing-teacher) may pass."""
-    if user.get("actor_role") != "admin":
+    """Only the real admin (not admin-previewing-teacher) may pass.
+
+    A "previewing" token has role=teacher + actor_role=admin. Admins must
+    explicitly exit preview to perform admin actions.
+    """
+    if user.get("role") != "admin" or user.get("actor_role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     return user
 

@@ -1,54 +1,53 @@
-# مسيطره — Teacher Dashboard (UI-only)
+# مسيطره — Teacher Dashboard (Full-Stack)
 
-## Original Problem Statement
-بناء **واجهة رئيسية فقط** (Dashboard UI Only) لتطبيق ويب عربي 100% باسم قابل للتغيير من
-الإعدادات لاحقًا. لا قاعدة بيانات، لا backend، لا authentication. يجب أن يكون التصميم مطابقًا
-للصورة المرجعية: ألوان باستيل + بنفسجي، بطاقات بحواف دائرية، RTL كامل، خط عربي عصري.
-اسم التطبيق المختار: **مسيطره**.
+## Stack
+- **Backend:** FastAPI + Motor (async MongoDB) + bcrypt + PyJWT (Bearer tokens)
+- **Frontend:** React (CRA + craco) + Tailwind + shadcn/ui + axios
+- **DB:** MongoDB (`DB_NAME` env)
+- **Auth:** JWT in `Authorization: Bearer …` header, stored client-side in localStorage
 
 ## Architecture
-- **Frontend only** (React + TailwindCSS + shadcn/ui + lucide-react + sonner).
-- Settings persisted via `localStorage` through `AppSettingsContext`.
-- No backend / no MongoDB use in this milestone (server.py left untouched).
+- `backend/server.py` mounts auth/teachers/subjects/students/settings routers
+- `backend/auth.py` — bcrypt hashing, JWT encode/decode, `get_current_user`,
+  `require_admin` (real admin only, not admin-previewing-teacher)
+- `backend/db.py` — Mongo connection, index ensure, idempotent admin seeding from `.env`
+- Teacher-scoped resources use `teacher_id` from token; admin manages teachers' data
+  via `POST /api/auth/preview/{id}` which mints a teacher-scoped token
+- Frontend `lib/api.js` injects Bearer header on every request
 
-## Implemented (Feb 2026)
-- RTL global layout, Tajawal + Cairo Arabic fonts.
-- Theme system with dynamic primary color + background style applied via CSS variables.
-- **Layout**: sticky top bar + right sidebar (desktop) + sheet sidebar (mobile).
-- **Dashboard**:
-  - Header pill (المادة الحالية) + dated header.
-  - Current subject hero card (الرياضيات) with violet gradient, floating math
-    decorations, mini calculator illustration, period & time pills.
-  - موضوع اليوم card (الجمع مع الاحتفاظ).
-  - النقاط المهمة list with checkmarks.
-  - أدوات سريعة — 5 pastel quick-tool cards.
-  - Left column: 4 stat cards (students, absentees, live countdown timer, next class)
-    + today's schedule list (active slot highlighted in violet).
-- **Settings page** (`/settings`): change app name + tagline, upload logo, upload icon,
-  pick primary color (8 presets + custom), pick background preset (4 options),
-  reset to defaults. All changes persist via localStorage and re-render UI live.
-- **Placeholder pages** for: الطلاب، الحضور، العلامات، الواجبات، الجدول الأسبوعي، التقارير.
-- All interactive elements include `data-testid`.
+## Implemented
+- Auth: login (admin + teachers), `/auth/me`, preview-as-teacher, logout
+- Teachers CRUD (admin): create/edit/toggle-active/reset-password/delete + cascade
+- Subjects CRUD (teacher-scoped) with color + base64 background + `is_current` toggle
+- Students CRUD (teacher-scoped) with unlimited embedded parents
+  (name, relation, phone, email, address)
+- App settings (admin write, all read): name, tagline, logo, icon, color, bg style
+- SPA fallback (`public/_redirects` + `render.yaml`) so refresh on /admin/* works
+- All previous UI design preserved (RTL, pastel violet, hero subject card, etc.)
 
-## User Persona
-- Female school teacher needing a calm, beautiful daily dashboard in Arabic.
+## Files Added/Changed (latest milestone)
+- backend/: `auth.py`, `db.py`, `routes/{auth_routes,teachers,subjects,students,settings}.py`,
+  rewrote `server.py`, added `.env.example`
+- frontend/: `lib/api.js`, rewrote `context/{AuthContext,SubjectsContext,AppSettingsContext}.jsx`,
+  new `context/StudentsContext.jsx`, new `pages/StudentsPage.jsx`, refactored
+  `Login.jsx` (async), `TeachersPage.jsx`, `SubjectsPage.jsx`, `Settings.jsx`,
+  `Sidebar.jsx`, `TopBar.jsx`, `App.js`
+
+## User Personas
+- Admin (school admin): creates/manages teachers, sees system stats, edits app branding
+- Teacher: manages her own students/subjects/etc; isolated from other teachers
+
+## Security
+- Passwords bcrypt-hashed; never returned in API responses (projection excludes password_hash)
+- JWT signed with `JWT_SECRET` (random 64-char hex)
+- Server-side role enforcement on every protected endpoint
+- Data isolation: teacher-scoped queries always filter by `teacher_id` from token
+
+## Test Credentials
+- Admin: `bsn.1988` / `12abAB!?` (seeded automatically from `.env` on startup)
 
 ## Backlog
-- **P0**
-  - Wire up real data for students / attendance / grades / assignments.
-  - Persist settings to backend per-user (after auth).
-- **P1**
-  - Build out the placeholder pages with full CRUD.
-  - Add weekly schedule editor.
-  - Reports & charts.
-  - Notifications panel + real notifications.
-- **P2**
-  - Multiple class/grade selector.
-  - Export reports to PDF.
-  - Dark mode toggle.
-
-## Notes
-- All app branding (name, logo, icon, color, background) is dynamic and editable
-  from `/settings` and applied globally via the theme provider.
-- Mock data lives in `frontend/src/data/mockData.js` and can be replaced with API
-  calls later without changing UI components.
+- **P1**: file upload to object storage (instead of base64 in Mongo)
+- **P1**: attendance, grades, assignments full CRUD
+- **P1**: deploy backend to Render (env vars in `backend/.env.example` ready)
+- **P2**: notifications, weekly schedule editor, reports/charts, parent portal

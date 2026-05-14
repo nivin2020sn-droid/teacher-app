@@ -53,6 +53,7 @@ async def login(body: LoginBody):
                     "id": "admin",
                     "username": admin_username,
                     "role": "admin",
+                    "actor_role": "admin",
                     "name": "المدير العام",
                     "subtitle": "إدارة النظام",
                     "avatar": None,
@@ -79,6 +80,7 @@ async def login(body: LoginBody):
     )
     teacher.pop("password_hash", None)
     teacher["role"] = "teacher"
+    teacher["actor_role"] = "teacher"
     return {"token": token, "user": teacher}
 
 
