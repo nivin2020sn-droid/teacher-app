@@ -1,11 +1,9 @@
 // Shared axios client. Reads REACT_APP_BACKEND_URL at build time, adds the
-// `/api/teacher` namespace prefix (we share kvd-backend; all our routes live
-// under that namespace to stay isolated from other modules), and attaches
-// the Bearer token on every request.
+// /api prefix, and attaches the Bearer token on every request.
 import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
-export const API_BASE = `${BACKEND_URL}/api/teacher`;
+export const API_BASE = `${BACKEND_URL}/api`;
 
 const TOKEN_KEY = "mosaytra.token.v1";
 

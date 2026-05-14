@@ -12,7 +12,7 @@ from ..auth import (
 from ..db import db
 
 
-router = APIRouter(tags=["teacher_app:auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class LoginBody(BaseModel):
@@ -31,7 +31,7 @@ async def login(body: LoginBody):
         raise HTTPException(status_code=400, detail="اسم المستخدم مطلوب")
 
     # Admin
-    admin_username = os.environ.get("TEACHER_APP_ADMIN_USERNAME", "bsn.1988")
+    admin_username = os.environ.get("ADMIN_USERNAME", "bsn.1988")
     if u_norm == _norm(admin_username):
         admin_doc = await db.admins.find_one({"username": admin_username})
         if admin_doc and verify_password(

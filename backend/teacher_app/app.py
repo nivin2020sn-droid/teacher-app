@@ -1,12 +1,9 @@
 """teacher_app router factory.
 
-Exposes a single function `create_router()` that returns a fully-wired
-APIRouter ready to be mounted by the host backend:
-
-    from teacher_app import create_router
-    app.include_router(create_router(), prefix="/api/teacher")
+Builds the composite APIRouter for the Smart Teacher Dashboard backend.
+Mounted at `/api` by server.py.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from .routes.auth_routes import router as auth_router
 from .routes.teachers import router as teachers_router
@@ -17,39 +14,38 @@ from .routes.settings import router as settings_router
 
 
 def create_router() -> APIRouter:
-    """Build the composite router for teacher_app.
+    """Endpoints exposed (mounted at /api):
 
-    Endpoints exposed (when mounted at /api/teacher):
-    - POST /api/teacher/login
-    - GET  /api/teacher/me
-    - POST /api/teacher/preview/{teacher_id}
-    - CRUD /api/teacher/teachers
-    - CRUD /api/teacher/subjects
-    - CRUD /api/teacher/students
-    - GET  /api/teacher/guardians
-    - GET/PUT /api/teacher/settings
+    Auth:
+      - POST /api/auth/login
+      - GET  /api/auth/me
+      - POST /api/auth/preview/{teacher_id}
+
+    Resources:
+      - CRUD /api/teachers              (admin)
+      - CRUD /api/subjects              (teacher-scoped)
+      - CRUD /api/students              (teacher-scoped)
+      - GET  /api/guardians             (teacher-scoped, flat list)
+      - GET/PUT /api/settings           (read=any auth, write=admin)
+      - GET  /api/health
     """
     router = APIRouter()
-    router.include_router(auth_router)        # POST /login, GET /me, POST /preview/{id}
-    router.include_router(teachers_router)    # /teachers/*
-    router.include_router(subjects_router)    # /subjects/*
-    router.include_router(students_router)    # /students/*
-    router.include_router(guardians_router)   # /guardians
-    router.include_router(settings_router)    # /settings
+    router.include_router(auth_router)
+    router.include_router(teachers_router)
+    router.include_router(subjects_router)
+    router.include_router(students_router)
+    router.include_router(guardians_router)
+    router.include_router(settings_router)
 
-    @router.get("/health", tags=["teacher_app"])
+    @router.get("/health", tags=["health"])
     async def health():
-        return {"status": "ok", "module": "teacher_app"}
+        return {"status": "ok"}
 
     return router
 
 
 async def on_startup():
-    """Optional startup hook — host backend should call this once on app start.
-
-    It only creates indexes inside the `teacher_app` database and seeds the
-    hidden admin account. It NEVER touches any other database/collections.
-    """
+    """Create indexes and seed the hidden admin account (idempotent)."""
     from .db import ensure_indexes, seed_admin
 
     await ensure_indexes()

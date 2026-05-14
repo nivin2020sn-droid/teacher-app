@@ -1,8 +1,4 @@
-"""Authentication helpers for teacher_app — fully self-contained.
-
-Uses TEACHER_APP_JWT_SECRET to keep its tokens distinct from any other auth
-that may exist in the host backend (kvd).
-"""
+"""Authentication helpers — bcrypt + JWT (Bearer token)."""
 import os
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -16,14 +12,9 @@ ACCESS_TOKEN_TTL_MINUTES = 60 * 24 * 7  # 7 days
 
 
 def _secret() -> str:
-    s = (
-        os.environ.get("TEACHER_APP_JWT_SECRET")
-        or os.environ.get("JWT_SECRET")
-    )
+    s = os.environ.get("JWT_SECRET")
     if not s:
-        raise RuntimeError(
-            "TEACHER_APP_JWT_SECRET (or JWT_SECRET) is not configured"
-        )
+        raise RuntimeError("JWT_SECRET is not configured")
     return s
 
 
@@ -49,8 +40,6 @@ def create_access_token(
         "actor_role": actor_role or role,
         "username": username,
         "type": "access",
-        # Issuer claim helps the host backend recognise these tokens.
-        "iss": "teacher_app",
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc)
         + timedelta(minutes=ACCESS_TOKEN_TTL_MINUTES),
@@ -67,12 +56,11 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-# --- FastAPI dependencies ---
 def _extract_token(request: Request) -> Optional[str]:
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
         return auth[7:].strip()
-    return request.cookies.get("ta_access_token")  # ta_ prefix to avoid host clash
+    return request.cookies.get("access_token")
 
 
 async def get_current_user(request: Request) -> dict:
@@ -82,7 +70,7 @@ async def get_current_user(request: Request) -> dict:
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     payload = decode_token(token)
-    if payload.get("type") != "access" or payload.get("iss") != "teacher_app":
+    if payload.get("type") != "access":
         raise HTTPException(status_code=401, detail="Invalid token")
 
     role = payload.get("role")
