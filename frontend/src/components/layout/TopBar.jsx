@@ -12,7 +12,7 @@ export const TopBar = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" && user?.actor_role === "admin";
 
   // For teachers: prefer their own name/avatar; fall back to settings/defaults.
   const displayName = isAdmin

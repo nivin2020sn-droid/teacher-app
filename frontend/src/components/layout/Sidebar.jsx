@@ -20,6 +20,7 @@ import { useAuth } from "../../context/AuthContext";
 const TEACHER_NAV = [
   { to: "/", label: "الرئيسية", icon: Home, end: true },
   { to: "/students", label: "الطلاب", icon: Users },
+  { to: "/subjects", label: "موادّي", icon: BookCopy },
   { to: "/attendance", label: "الحضور", icon: CalendarCheck },
   { to: "/grades", label: "العلامات", icon: Star },
   { to: "/assignments", label: "الواجبات", icon: ClipboardList },
@@ -31,9 +32,7 @@ const TEACHER_NAV = [
 const ADMIN_NAV = [
   { to: "/admin", label: "لوحة المدير", icon: ShieldCheck, end: true },
   { to: "/admin/teachers", label: "إدارة المعلمات", icon: Users },
-  { to: "/admin/subjects", label: "إدارة المواد", icon: BookCopy },
   { to: "/settings", label: "إعدادات التطبيق", icon: SettingsIcon },
-  { to: "/", label: "معاينة واجهة المعلمة", icon: Home },
 ];
 
 export const Sidebar = ({ onNavigate }) => {
@@ -41,8 +40,8 @@ export const Sidebar = ({ onNavigate }) => {
   const { user, logout, exitPreview } = useAuth();
   const navigate = useNavigate();
 
-  const isAdmin = user?.role === "admin";
-  const isPreviewing = user?._previewBy === "admin";
+  const isAdmin = user?.role === "admin" && user?.actor_role === "admin";
+  const isPreviewing = user?.actor_role === "admin" && user?.role === "teacher";
   const nav = isAdmin ? ADMIN_NAV : TEACHER_NAV;
 
   const handleLogout = () => {
@@ -89,8 +88,8 @@ export const Sidebar = ({ onNavigate }) => {
         {isPreviewing && (
           <button
             type="button"
-            onClick={() => {
-              exitPreview();
+            onClick={async () => {
+              await exitPreview();
               navigate("/admin");
             }}
             data-testid="exit-preview-btn"

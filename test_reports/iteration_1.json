@@ -1,0 +1,65 @@
+{
+  "summary": "Full-stack refactor verified end-to-end. 21/21 backend pytest cases pass (auth, teachers CRUD, scoping, preview, settings, cascade). Frontend smoke verified: admin login → /admin, teacher login → /, refresh persistence, RTL/Arabic, teacher cannot reach /admin, settings read-only for teacher, create-teacher dialog opens, logout works. Fixed one frontend bug (missing useSubjects import on AdminDashboard).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/auth/preview/{teacher_id}",
+        "issue": "Admin-previewing-teacher token (role=teacher, actor_role=admin) STILL passes require_admin and can call admin-only endpoints like GET /api/teachers. The agent-to-agent note explicitly says this should NOT be allowed. Current code (auth.py:108-112) only checks actor_role==admin. Decision needed: either tighten require_admin to also require role==admin, or update the spec/note to match the current 'admin keeps powers while previewing' behaviour."
+      },
+      {
+        "endpoint": "GET /api/subjects (admin, no preview)",
+        "issue": "Real admin gets 403 'Teachers only'. Acceptable per spec but worth confirming this is desired (admin must always preview to manage subjects)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "AdminDashboard",
+        "issue": "Used useSubjects() without importing it — caused 'useSubjects is not defined' pageerror and React error-boundary warning. Fixed by removing the unused destructuring (subjects was never rendered).",
+        "selector": "[data-testid=\"admin-dashboard-page\"]",
+        "priority": "MEDIUM (FIXED)"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/admin (AdminDashboard)",
+        "issues": [
+          "Sidebar shows teacher nav items (الطلاب, موادّي, الحضور, العلامات, الواجبات, الجدول الأسبوعي, التقارير) for the admin user too. Admin has no own teacher data, so clicking these will hit 403. Consider rendering an admin-specific sidebar (لوحة المدير, إدارة المعلمات, إعدادات التطبيق) when user.role==admin and not previewing."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_full_stack.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Decide & document preview RBAC: should admin-previewing-teacher retain admin powers (current) or be downgraded to teacher scope only?",
+    "Render admin-specific sidebar nav on /admin and /admin/* routes (hide teacher-scoped items)."
+  ],
+  "critical_code_review_comments": [
+    "auth.py require_admin only checks actor_role — semantics of preview need to be settled (see action_items).",
+    "AdminDashboard had a dead reference to useSubjects (now removed). Add ESLint rule no-undef in CI to catch similar regressions.",
+    "Backend MongoDB _id is properly excluded everywhere via {'_id': 0, 'password_hash': 0} projections — good.",
+    "bcrypt hashing OK ($2b$ format), JWT 7-day TTL acceptable for a school PWA.",
+    "seed_admin() correctly idempotent and rotates the hash if env password changed.",
+    "Subjects/Students routes correctly scoped via teacher_id from token — no leakage."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_full_stack.py (new)",
+    "/app/frontend/src/pages/admin/AdminDashboard.jsx (removed dead useSubjects reference)"
+  ],
+  "success_rate": {
+    "backend": "100% (21/21)",
+    "frontend": "~95% (all flows pass; 1 dashboard bug fixed; minor sidebar UX flagged)"
+  },
+  "test_credentials": "Admin bsn.1988 / 12abAB!? (seeded). Test teachers created with TEST_ prefix and cleaned up via cascade-delete in pytest teardown.",
+  "seed_data_creation": "All test teachers/subjects/students created during the run are deleted via DELETE /api/teachers/{id} cascade or per-test cleanup.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests live at /app/backend/tests/test_full_stack.py — reuse as regression suite. Admin: bsn.1988/12abAB!?. Open design question: should admin previewing teacher be allowed to call /api/teachers? Currently YES; spec note says NO. Frontend dead-code import bug already fixed.",
+  "rca of the issue": "AdminDashboard.jsx line 35 used `useSubjects()` without importing it from ../../context/SubjectsContext. The variable was never used in JSX (probably leftover from an earlier refactor when admin managed subjects directly before the /subjects route became teacher-only). React's module evaluation threw ReferenceError on first render, surfacing as a pageerror + react error-boundary warning. Mitigation: removed the unused destructuring. Recommend enabling eslint rule no-undef in the frontend lint config to prevent recurrence."
+}

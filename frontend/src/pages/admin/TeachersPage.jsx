@@ -187,12 +187,12 @@ export default function TeachersPage() {
     setCreateOpen(true);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.name || !form.username || !form.password) {
       toast.error("يرجى إدخال الاسم واسم المستخدم وكلمة المرور");
       return;
     }
-    const res = createTeacher(form);
+    const res = await createTeacher(form);
     if (!res.ok) return toast.error(res.error);
     toast.success("تم إنشاء حساب المعلمة");
     setCreateOpen(false);
@@ -210,13 +210,11 @@ export default function TeachersPage() {
     });
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!form.name || !form.username) {
       toast.error("الاسم واسم المستخدم مطلوبان");
       return;
     }
-    // Only include the password key if the admin actually typed a new one.
-    // updateTeacher is ALSO defensive and ignores empty/non-string passwords.
     const patch = {
       name: form.name,
       username: form.username,
@@ -226,7 +224,8 @@ export default function TeachersPage() {
     if (form.password && form.password.length > 0) {
       patch.password = form.password;
     }
-    updateTeacher(editing.id, patch);
+    const res = await updateTeacher(editing.id, patch);
+    if (!res.ok) return toast.error(res.error);
     toast.success(
       form.password
         ? "تم تحديث بيانات المعلمة وكلمة المرور"
@@ -235,16 +234,17 @@ export default function TeachersPage() {
     setEditing(null);
   };
 
-  const handleResetPassword = () => {
-    const res = resetPassword(resetting.id, newPw);
+  const handleResetPassword = async () => {
+    const res = await resetPassword(resetting.id, newPw);
     if (!res.ok) return toast.error(res.error);
     toast.success("تم إعادة تعيين كلمة المرور");
     setResetting(null);
     setNewPw("");
   };
 
-  const handleDelete = () => {
-    deleteTeacher(deletingId);
+  const handleDelete = async () => {
+    const res = await deleteTeacher(deletingId);
+    if (!res.ok) return toast.error(res.error);
     toast.success("تم حذف الحساب");
     setDeletingId(null);
   };
@@ -361,8 +361,12 @@ export default function TeachersPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    previewAsTeacher(t.id);
+                  onClick={async () => {
+                    const r = await previewAsTeacher(t.id);
+                    if (!r.ok) {
+                      toast.error(r.error || "تعذّرت المعاينة");
+                      return;
+                    }
                     navigate("/");
                   }}
                   data-testid={`preview-teacher-${t.id}`}

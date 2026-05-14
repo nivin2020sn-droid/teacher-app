@@ -27,27 +27,24 @@ export default function Login() {
     return <Navigate to={dest} replace />;
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    // tiny delay so the button shows feedback
-    setTimeout(() => {
-      const res = login(username, password);
-      setLoading(false);
-      if (!res.ok) {
-        setError(res.error || "حدث خطأ");
-        return;
-      }
-      const from = location.state?.from?.pathname;
-      const dest =
-        res.role === "admin"
-          ? "/admin"
-          : from && from !== "/login"
-            ? from
-            : "/";
-      navigate(dest, { replace: true });
-    }, 200);
+    const res = await login(username, password);
+    setLoading(false);
+    if (!res.ok) {
+      setError(res.error || "حدث خطأ");
+      return;
+    }
+    const from = location.state?.from?.pathname;
+    const dest =
+      res.role === "admin"
+        ? "/admin"
+        : from && from !== "/login"
+          ? from
+          : "/";
+    navigate(dest, { replace: true });
   };
 
   return (

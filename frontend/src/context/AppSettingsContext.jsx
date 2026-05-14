@@ -1,40 +1,36 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
+import { api, extractError } from "../lib/api";
+import { useAuth } from "./AuthContext";
 
-// Default settings — everything can be changed from /settings later.
 const DEFAULT_SETTINGS = {
   appName: "مسيطره",
   appTagline: "لوحة تحكم المعلمة",
-  logo: null, // data-url
-  icon: null, // data-url
-  primaryColor: "#7c5cff", // violet
-  backgroundStyle: "soft-violet", // soft-violet | warm-cream | mint | blush
-  // Teacher profile (shown in TopBar)
-  teacherName: "مرحباً، المعلمة",
-  teacherSubtitle: "أهلاً بك في يومك التعليمي",
-  teacherAvatar: null, // data-url; falls back to default URL when null
+  logo: null,
+  icon: null,
+  primaryColor: "#7c5cff",
+  backgroundStyle: "soft-violet",
 };
 
-// Default avatar used when teacher hasn't uploaded a photo
 export const DEFAULT_TEACHER_AVATAR =
   "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces";
 
-const STORAGE_KEY = "mosaytra.settings.v1";
-
 const AppSettingsContext = createContext({
   settings: DEFAULT_SETTINGS,
-  updateSettings: () => {},
-  resetSettings: () => {},
+  updateSettings: async () => {},
+  resetSettings: async () => {},
+  loading: false,
 });
 
-// Convert "#7c5cff" → "256 84% 68%"  (Tailwind/Shadcn HSL token format)
+// hex → "H S% L%"
 function hexToHslTokens(hex) {
-  const m = hex.replace("#", "").match(/.{1,2}/g);
+  const m = (hex || "").replace("#", "").match(/.{1,2}/g);
   if (!m || m.length < 3) return "256 84% 68%";
   const [r, g, b] = m.map((x) => parseInt(x, 16) / 255);
   const max = Math.max(r, g, b);
@@ -72,7 +68,6 @@ function applyToRoot(settings) {
   const primaryHsl = hexToHslTokens(settings.primaryColor);
   root.style.setProperty("--primary", primaryHsl);
   root.style.setProperty("--ring", primaryHsl);
-  // soft variant: same hue, very light
   const [h] = primaryHsl.split(" ");
   root.style.setProperty("--primary-soft", `${h} 100% 95%`);
   root.style.setProperty(
@@ -82,32 +77,51 @@ function applyToRoot(settings) {
 }
 
 export function AppSettingsProvider({ children }) {
-  const [settings, setSettings] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-    } catch {
-      /* ignore */
+  const { user } = useAuth();
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!user) {
+      // Fall back to defaults until we have a session.
+      setSettings(DEFAULT_SETTINGS);
+      return;
     }
-    return DEFAULT_SETTINGS;
-  });
+    setLoading(true);
+    try {
+      const res = await api.get("/settings");
+      setSettings({ ...DEFAULT_SETTINGS, ...res.data });
+    } catch {
+      setSettings(DEFAULT_SETTINGS);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     applyToRoot(settings);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch {
-      /* ignore */
-    }
   }, [settings]);
 
+  const updateSettings = async (patch) => {
+    try {
+      const res = await api.put("/settings", patch);
+      setSettings({ ...DEFAULT_SETTINGS, ...res.data });
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: extractError(e) };
+    }
+  };
+
+  const resetSettings = async () => updateSettings(DEFAULT_SETTINGS);
+
   const value = useMemo(
-    () => ({
-      settings,
-      updateSettings: (patch) => setSettings((s) => ({ ...s, ...patch })),
-      resetSettings: () => setSettings(DEFAULT_SETTINGS),
-    }),
-    [settings],
+    () => ({ settings, updateSettings, resetSettings, loading, refresh }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [settings, loading],
   );
 
   return (

@@ -1,14 +1,11 @@
 import { Link } from "react-router-dom";
 import {
   Users,
-  BookCopy,
   Settings as SettingsIcon,
-  Eye,
   ArrowLeft,
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useSubjects } from "../../context/SubjectsContext";
 
 const Card = ({ to, icon: Icon, title, hint, color, testId }) => (
   <Link
@@ -35,7 +32,6 @@ const Card = ({ to, icon: Icon, title, hint, color, testId }) => (
 
 export default function AdminDashboard() {
   const { teachers } = useAuth();
-  const { subjects } = useSubjects();
   const activeTeachers = teachers.filter((t) => t.active).length;
 
   return (
@@ -58,7 +54,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="rounded-3xl bg-indigo-50 p-5 soft-shadow border border-white/60">
           <div className="text-xs font-bold text-indigo-600">عدد المعلمات</div>
           <div
@@ -77,15 +73,6 @@ export default function AdminDashboard() {
             {activeTeachers}
           </div>
         </div>
-        <div className="rounded-3xl bg-amber-50 p-5 soft-shadow border border-white/60">
-          <div className="text-xs font-bold text-amber-600">عدد المواد</div>
-          <div
-            data-testid="admin-stat-subjects"
-            className="text-3xl font-extrabold text-foreground mt-1"
-          >
-            {subjects.length}
-          </div>
-        </div>
       </div>
 
       {/* Quick actions */}
@@ -94,17 +81,9 @@ export default function AdminDashboard() {
           to="/admin/teachers"
           icon={Users}
           title="إدارة المعلمات"
-          hint="إنشاء وتعديل وحذف حسابات المعلمات"
+          hint="إنشاء وتعديل وحذف حسابات المعلمات + إدارة موادهنّ عبر المعاينة"
           color="#7c5cff"
           testId="admin-link-teachers"
-        />
-        <Card
-          to="/admin/subjects"
-          icon={BookCopy}
-          title="إدارة المواد"
-          hint="إضافة المواد وألوانها وخلفياتها"
-          color="#f59e0b"
-          testId="admin-link-subjects"
         />
         <Card
           to="/settings"
@@ -113,14 +92,6 @@ export default function AdminDashboard() {
           hint="اسم التطبيق، الشعار، الألوان، الخلفية"
           color="#0ea5e9"
           testId="admin-link-settings"
-        />
-        <Card
-          to="/"
-          icon={Eye}
-          title="معاينة واجهة المعلمة"
-          hint="ادخلي إلى الداشبورد كما تراه المعلمة"
-          color="#10b981"
-          testId="admin-link-preview"
         />
       </div>
     </div>

@@ -170,12 +170,16 @@ export default function SubjectsPage() {
     setCreateOpen(true);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.name.trim()) {
       toast.error("اسم المادة مطلوب");
       return;
     }
-    createSubject(form);
+    const res = await createSubject(form);
+    if (!res.ok) {
+      toast.error(res.error || "تعذّر إضافة المادة");
+      return;
+    }
     toast.success("تمت إضافة المادة");
     setCreateOpen(false);
   };
@@ -185,18 +189,26 @@ export default function SubjectsPage() {
     setForm({ name: s.name, color: s.color, background: s.background });
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!form.name.trim()) {
       toast.error("اسم المادة مطلوب");
       return;
     }
-    updateSubject(editing.id, form);
+    const res = await updateSubject(editing.id, form);
+    if (!res.ok) {
+      toast.error(res.error || "تعذّر تحديث المادة");
+      return;
+    }
     toast.success("تم تحديث المادة");
     setEditing(null);
   };
 
-  const handleDelete = () => {
-    deleteSubject(deletingId);
+  const handleDelete = async () => {
+    const res = await deleteSubject(deletingId);
+    if (!res.ok) {
+      toast.error(res.error || "تعذّر الحذف");
+      return;
+    }
     toast.success("تم حذف المادة");
     setDeletingId(null);
   };
@@ -254,7 +266,7 @@ export default function SubjectsPage() {
                   {s.name.charAt(0)}
                 </span>
               )}
-              {s.isCurrent && (
+              {s.is_current && (
                 <span className="absolute top-2 end-2 px-2 py-1 rounded-full bg-white/90 text-[11px] font-bold flex items-center gap-1 text-amber-600 soft-shadow">
                   <Star size={12} fill="currentColor" /> الحالية
                 </span>
@@ -280,7 +292,7 @@ export default function SubjectsPage() {
                 >
                   <Pencil size={14} className="me-1" /> تعديل
                 </Button>
-                {!s.isCurrent && (
+                {!s.is_current && (
                   <Button
                     size="sm"
                     variant="outline"

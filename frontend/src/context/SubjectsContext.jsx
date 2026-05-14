@@ -1,130 +1,93 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
 } from "react";
-
-const STORAGE_KEY = "mosaytra.subjects.v1";
-
-const DEFAULT_SUBJECTS = [
-  {
-    id: "subj_math",
-    name: "الرياضيات",
-    color: "#7c5cff",
-    background: null,
-    isCurrent: true,
-  },
-  {
-    id: "subj_arabic",
-    name: "اللغة العربية",
-    color: "#f59e0b",
-    background: null,
-    isCurrent: false,
-  },
-  {
-    id: "subj_science",
-    name: "العلوم",
-    color: "#10b981",
-    background: null,
-    isCurrent: false,
-  },
-  {
-    id: "subj_social",
-    name: "الاجتماعيات",
-    color: "#0ea5e9",
-    background: null,
-    isCurrent: false,
-  },
-  {
-    id: "subj_english",
-    name: "اللغة الإنجليزية",
-    color: "#ec4899",
-    background: null,
-    isCurrent: false,
-  },
-];
+import { api, extractError } from "../lib/api";
+import { useAuth } from "./AuthContext";
 
 const SubjectsContext = createContext(null);
 
-function readSubjects() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const list = JSON.parse(raw);
-      if (Array.isArray(list) && list.length) return list;
-    }
-  } catch {
-    /* ignore */
-  }
-  return DEFAULT_SUBJECTS;
-}
-
-function genId() {
-  return `subj_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-}
-
 export function SubjectsProvider({ children }) {
-  const [subjects, setSubjects] = useState(() => readSubjects());
+  const { user, isTeacher } = useAuth();
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!isTeacher) {
+      setSubjects([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.get("/subjects");
+      setSubjects(res.data);
+    } catch {
+      setSubjects([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [isTeacher]);
 
   useEffect(() => {
+    refresh();
+  }, [refresh, user]);
+
+  const createSubject = async (data) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));
-    } catch {
-      /* ignore (likely localStorage quota for big bg images) */
+      const res = await api.post("/subjects", data);
+      setSubjects((prev) => [...prev, res.data]);
+      return { ok: true, subject: res.data };
+    } catch (e) {
+      return { ok: false, error: extractError(e) };
     }
-  }, [subjects]);
-
-  const createSubject = (data) => {
-    const s = {
-      id: genId(),
-      name: data.name?.trim() || "مادة جديدة",
-      color: data.color || "#7c5cff",
-      background: data.background || null,
-      isCurrent: false,
-    };
-    setSubjects((prev) => [...prev, s]);
-    return s;
   };
 
-  const updateSubject = (id, patch) => {
-    setSubjects((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-    );
+  const updateSubject = async (id, patch) => {
+    try {
+      const res = await api.patch(`/subjects/${id}`, patch);
+      setSubjects((prev) =>
+        prev.map((s) => (s.id === id ? res.data : s.id === res.data.id ? res.data : s)),
+      );
+      // If is_current toggled, refresh to clear others
+      if (patch.is_current === true) await refresh();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: extractError(e) };
+    }
   };
 
-  const deleteSubject = (id) => {
-    setSubjects((prev) => {
-      const next = prev.filter((s) => s.id !== id);
-      // ensure at least one current subject remains
-      if (!next.some((s) => s.isCurrent) && next.length) {
-        next[0] = { ...next[0], isCurrent: true };
-      }
-      return next;
-    });
+  const deleteSubject = async (id) => {
+    try {
+      await api.delete(`/subjects/${id}`);
+      await refresh();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: extractError(e) };
+    }
   };
 
-  const setCurrent = (id) => {
-    setSubjects((prev) =>
-      prev.map((s) => ({ ...s, isCurrent: s.id === id })),
-    );
-  };
+  const setCurrent = async (id) => updateSubject(id, { is_current: true });
 
   const currentSubject =
-    subjects.find((s) => s.isCurrent) || subjects[0] || null;
+    subjects.find((s) => s.is_current) || subjects[0] || null;
 
   const value = useMemo(
     () => ({
       subjects,
       currentSubject,
+      loading,
       createSubject,
       updateSubject,
       deleteSubject,
       setCurrent,
+      refresh,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [subjects],
+    [subjects, loading],
   );
 
   return (
