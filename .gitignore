@@ -111,3 +111,12 @@ credentials.json
 # Allow committed production build config (no secrets — Render reads these)
 !frontend/.env.production
 !frontend/.env.example
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
