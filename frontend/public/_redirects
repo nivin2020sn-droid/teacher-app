@@ -1,0 +1,4 @@
+# SPA fallback for Render Static Site.
+# Every unmatched path serves index.html so React Router can handle routing.
+# This must live in the publish directory (dist/) — CRA copies public/* there.
+/*    /index.html   200

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { LogIn, User, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppSettings } from "../context/AppSettingsContext";
@@ -19,10 +19,12 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Already logged in → redirect immediately
+  // Already logged in → SPA-internal redirect (no full page reload).
+  // Using <Navigate> avoids `window.location` which causes Render to
+  // request /admin from the server and return 404 on Static Site.
   if (user) {
     const dest = user.role === "admin" ? "/admin" : "/";
-    return null || (window.location.replace(dest), null);
+    return <Navigate to={dest} replace />;
   }
 
   const handleSubmit = (e) => {
@@ -39,7 +41,11 @@ export default function Login() {
       }
       const from = location.state?.from?.pathname;
       const dest =
-        res.role === "admin" ? "/admin" : from && from !== "/login" ? from : "/";
+        res.role === "admin"
+          ? "/admin"
+          : from && from !== "/login"
+            ? from
+            : "/";
       navigate(dest, { replace: true });
     }, 200);
   };
