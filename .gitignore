@@ -106,3 +106,8 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+
+# Allow committed production build config (no secrets — Render reads these)
+!frontend/.env.production
+!frontend/.env.example

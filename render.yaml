@@ -1,33 +1,25 @@
 # Render Static Site Blueprint
-# Render auto-detects this file and provisions the service accordingly.
-# Do NOT change the values in Render's dashboard — keep them in this file.
+# Mirrors the manual Render dashboard configuration so settings stay in repo.
 
 services:
   - type: web
-    name: mosaytra-frontend
+    name: teacher-appfrontend
     runtime: static
     rootDir: frontend
-    # Force CI=false so CRA does not treat ESLint warnings as errors.
-    # --network-timeout helps when the registry / tarballs are slow.
-    buildCommand: yarn install --frozen-lockfile --network-timeout 600000 && CI=false yarn build
-    staticPublishPath: build
+    # Render's static service uses npm by default. .npmrc handles peer deps;
+    # .env.production sets BUILD_PATH=dist and CI=false.
+    buildCommand: npm install --no-audit --no-fund && npm run build
+    staticPublishPath: dist
     autoDeploy: true
     pullRequestPreviewsEnabled: false
     envVars:
       - key: NODE_VERSION
         value: 20.18.0
-      - key: CI
-        value: "false"
-      - key: GENERATE_SOURCEMAP
-        value: "false"
-      # NOTE: REACT_APP_BACKEND_URL must be provided in Render dashboard
-      # (Environment tab) OR uncomment and set here once the backend URL is final.
+      # NOTE: REACT_APP_BACKEND_URL is not required while the app is UI-only.
+      # When the backend is added, uncomment and set the production URL.
       # - key: REACT_APP_BACKEND_URL
       #   value: https://your-backend.example.com
     headers:
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
       - path: /static/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
