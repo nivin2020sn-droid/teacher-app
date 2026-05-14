@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Home,
   Users,
@@ -10,10 +10,14 @@ import {
   Settings as SettingsIcon,
   LogOut,
   GraduationCap,
+  ShieldCheck,
+  BookCopy,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useAppSettings } from "../../context/AppSettingsContext";
+import { useAuth } from "../../context/AuthContext";
 
-const NAV = [
+const TEACHER_NAV = [
   { to: "/", label: "الرئيسية", icon: Home, end: true },
   { to: "/students", label: "الطلاب", icon: Users },
   { to: "/attendance", label: "الحضور", icon: CalendarCheck },
@@ -24,15 +28,34 @@ const NAV = [
   { to: "/settings", label: "الإعدادات", icon: SettingsIcon },
 ];
 
+const ADMIN_NAV = [
+  { to: "/admin", label: "لوحة المدير", icon: ShieldCheck, end: true },
+  { to: "/admin/teachers", label: "إدارة المعلمات", icon: Users },
+  { to: "/admin/subjects", label: "إدارة المواد", icon: BookCopy },
+  { to: "/settings", label: "إعدادات التطبيق", icon: SettingsIcon },
+  { to: "/", label: "معاينة واجهة المعلمة", icon: Home },
+];
+
 export const Sidebar = ({ onNavigate }) => {
   const { settings } = useAppSettings();
+  const { user, logout, exitPreview } = useAuth();
+  const navigate = useNavigate();
+
+  const isAdmin = user?.role === "admin";
+  const isPreviewing = user?._previewBy === "admin";
+  const nav = isAdmin ? ADMIN_NAV : TEACHER_NAV;
+
+  const handleLogout = () => {
+    logout();
+    onNavigate?.();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <aside
       data-testid="app-sidebar"
       className="flex flex-col h-full w-[260px] shrink-0 bg-white border-l border-border/60"
     >
-      {/* Brand */}
       <div className="px-6 pt-7 pb-5">
         <div className="flex items-center gap-3">
           <div
@@ -58,21 +81,35 @@ export const Sidebar = ({ onNavigate }) => {
               {settings.appName}
             </div>
             <div className="text-xs text-muted-foreground">
-              {settings.appTagline}
+              {isAdmin ? "وضع المدير" : settings.appTagline}
             </div>
           </div>
         </div>
+
+        {isPreviewing && (
+          <button
+            type="button"
+            onClick={() => {
+              exitPreview();
+              navigate("/admin");
+            }}
+            data-testid="exit-preview-btn"
+            className="mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold hover:bg-amber-100 transition-colors"
+          >
+            <ArrowLeftRight size={14} />
+            <span>خروج من المعاينة</span>
+          </button>
+        )}
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto scrollbar-hide">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {nav.map(({ to, label, icon: Icon, end }) => (
           <NavLink
-            key={to}
+            key={`${to}-${label}`}
             to={to}
             end={end}
             onClick={onNavigate}
-            data-testid={`nav-${to.replace("/", "") || "home"}`}
+            data-testid={`nav-${label}`}
             className={({ isActive }) =>
               [
                 "group flex items-center gap-3 px-4 py-3 rounded-2xl text-[15px] font-medium transition-all duration-200",
@@ -82,9 +119,7 @@ export const Sidebar = ({ onNavigate }) => {
               ].join(" ")
             }
             style={({ isActive }) =>
-              isActive
-                ? { backgroundColor: settings.primaryColor }
-                : undefined
+              isActive ? { backgroundColor: settings.primaryColor } : undefined
             }
           >
             {({ isActive }) => (
@@ -105,11 +140,11 @@ export const Sidebar = ({ onNavigate }) => {
         ))}
       </nav>
 
-      {/* Logout */}
       <div className="p-4">
         <button
-          data-testid="logout-btn"
           type="button"
+          onClick={handleLogout}
+          data-testid="logout-btn"
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-border bg-white text-foreground/80 hover:text-foreground hover:bg-secondary transition-colors font-medium"
         >
           <LogOut size={18} />
