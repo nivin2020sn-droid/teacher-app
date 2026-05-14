@@ -14,7 +14,15 @@ const DEFAULT_SETTINGS = {
   icon: null, // data-url
   primaryColor: "#7c5cff", // violet
   backgroundStyle: "soft-violet", // soft-violet | warm-cream | mint | blush
+  // Teacher profile (shown in TopBar)
+  teacherName: "مرحباً، المعلمة",
+  teacherSubtitle: "أهلاً بك في يومك التعليمي",
+  teacherAvatar: null, // data-url; falls back to default URL when null
 };
+
+// Default avatar used when teacher hasn't uploaded a photo
+export const DEFAULT_TEACHER_AVATAR =
+  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&crop=faces";
 
 const STORAGE_KEY = "mosaytra.settings.v1";
 

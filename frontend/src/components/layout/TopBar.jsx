@@ -1,9 +1,15 @@
 import { Bell, Menu } from "lucide-react";
-import { useAppSettings } from "../../context/AppSettingsContext";
-import { teacher } from "../../data/mockData";
+import {
+  useAppSettings,
+  DEFAULT_TEACHER_AVATAR,
+} from "../../context/AppSettingsContext";
 
 export const TopBar = ({ onMenuClick }) => {
   const { settings } = useAppSettings();
+  const teacherName = settings.teacherName?.trim() || "مرحباً، المعلمة";
+  const teacherSubtitle =
+    settings.teacherSubtitle?.trim() || "أهلاً بك في يومك التعليمي";
+  const teacherAvatar = settings.teacherAvatar || DEFAULT_TEACHER_AVATAR;
 
   return (
     <header
@@ -74,15 +80,15 @@ export const TopBar = ({ onMenuClick }) => {
               data-testid="topbar-teacher-greeting"
               className="text-sm font-bold text-foreground leading-tight"
             >
-              {teacher.greeting}
+              {teacherName}
             </div>
             <div className="text-xs text-muted-foreground leading-tight">
-              {teacher.subtitle}
+              {teacherSubtitle}
             </div>
           </div>
           <img
             data-testid="topbar-avatar"
-            src={teacher.avatar}
+            src={teacherAvatar}
             alt="avatar"
             className="h-11 w-11 rounded-2xl object-cover ring-2 ring-white soft-shadow"
           />

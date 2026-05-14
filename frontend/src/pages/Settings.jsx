@@ -7,8 +7,12 @@ import {
   RotateCcw,
   Check,
   Type,
+  UserCircle2,
 } from "lucide-react";
-import { useAppSettings } from "../context/AppSettingsContext";
+import {
+  useAppSettings,
+  DEFAULT_TEACHER_AVATAR,
+} from "../context/AppSettingsContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -45,8 +49,13 @@ export default function Settings() {
   const { settings, updateSettings, resetSettings } = useAppSettings();
   const [name, setName] = useState(settings.appName);
   const [tagline, setTagline] = useState(settings.appTagline);
+  const [teacherName, setTeacherName] = useState(settings.teacherName);
+  const [teacherSubtitle, setTeacherSubtitle] = useState(
+    settings.teacherSubtitle,
+  );
   const logoInputRef = useRef(null);
   const iconInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
 
   const handleSaveName = () => {
     updateSettings({ appName: name.trim() || "مسيطره", appTagline: tagline });
@@ -67,6 +76,23 @@ export default function Settings() {
     const url = await fileToDataUrl(file);
     updateSettings({ icon: url });
     toast.success("تم تحديث الأيقونة");
+  };
+
+  const handleAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await fileToDataUrl(file);
+    updateSettings({ teacherAvatar: url });
+    toast.success("تم تحديث صورة المعلمة");
+  };
+
+  const handleSaveTeacher = () => {
+    updateSettings({
+      teacherName: teacherName.trim() || "مرحباً، المعلمة",
+      teacherSubtitle:
+        teacherSubtitle.trim() || "أهلاً بك في يومك التعليمي",
+    });
+    toast.success("تم حفظ ملف المعلمة");
   };
 
   return (
@@ -136,6 +162,93 @@ export default function Settings() {
           </Button>
         </div>
       </section>
+
+      {/* Teacher profile (ملف المعلمة) */}
+      <section
+        data-testid="teacher-profile-section"
+        className="rounded-3xl bg-white p-6 sm:p-8 soft-shadow border border-border/50 space-y-5"
+      >
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-base font-bold">ملف المعلمة</span>
+          <UserCircle2 size={18} style={{ color: settings.primaryColor }} />
+        </div>
+
+        <div className="flex flex-col sm:flex-row-reverse items-center gap-5 p-4 rounded-2xl bg-secondary/40">
+          {/* Avatar preview */}
+          <img
+            data-testid="teacher-avatar-preview"
+            src={settings.teacherAvatar || DEFAULT_TEACHER_AVATAR}
+            alt="صورة المعلمة"
+            className="h-24 w-24 rounded-3xl object-cover ring-2 ring-white soft-shadow"
+          />
+          {/* Upload */}
+          <div className="flex-1 w-full text-end">
+            <Button
+              variant="outline"
+              onClick={() => avatarInputRef.current?.click()}
+              data-testid="settings-upload-avatar"
+              className="rounded-xl"
+            >
+              <Upload size={16} className="me-1" />
+              رفع الصورة
+            </Button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatar}
+            />
+            <p className="text-xs text-foreground/60 mt-2">
+              يُفضّل صورة مربعة بدقة 200×200 أو أعلى. ستظهر في الشريط العلوي.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="teacherName" className="text-end block">
+              اسم المعلمة
+            </Label>
+            <Input
+              id="teacherName"
+              data-testid="settings-teacher-name"
+              value={teacherName}
+              onChange={(e) => setTeacherName(e.target.value)}
+              dir="rtl"
+              className="text-end"
+              placeholder="مثال: أ. سارة المالكي"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="teacherSubtitle" className="text-end block">
+              الوصف الفرعي
+            </Label>
+            <Input
+              id="teacherSubtitle"
+              data-testid="settings-teacher-subtitle"
+              value={teacherSubtitle}
+              onChange={(e) => setTeacherSubtitle(e.target.value)}
+              dir="rtl"
+              className="text-end"
+              placeholder="مثال: أهلاً بك في رحلتك التعليمية"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-start">
+          <Button
+            data-testid="settings-save-teacher"
+            onClick={handleSaveTeacher}
+            style={{ backgroundColor: settings.primaryColor }}
+            className="text-white hover:opacity-90 rounded-xl"
+          >
+            <Check size={16} className="me-1" />
+            حفظ التغييرات
+          </Button>
+        </div>
+      </section>
+
 
       {/* Logo & Icon */}
       <section className="rounded-3xl bg-white p-6 sm:p-8 soft-shadow border border-border/50 space-y-5">
@@ -307,6 +420,8 @@ export default function Settings() {
             resetSettings();
             setName("مسيطره");
             setTagline("لوحة تحكم المعلمة");
+            setTeacherName("مرحباً، المعلمة");
+            setTeacherSubtitle("أهلاً بك في يومك التعليمي");
             toast.success("تم استعادة الإعدادات الافتراضية");
           }}
           className="rounded-xl"
