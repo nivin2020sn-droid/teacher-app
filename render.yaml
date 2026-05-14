@@ -15,10 +15,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20.18.0
-      # NOTE: REACT_APP_BACKEND_URL is not required while the app is UI-only.
-      # When the backend is added, uncomment and set the production URL.
-      # - key: REACT_APP_BACKEND_URL
-      #   value: https://your-backend.example.com
+      # Production backend URL (Render web service for the FastAPI backend).
+      - key: REACT_APP_BACKEND_URL
+        value: https://teacher-app-backend-rozd.onrender.com
     headers:
       - path: /static/*
         name: Cache-Control
