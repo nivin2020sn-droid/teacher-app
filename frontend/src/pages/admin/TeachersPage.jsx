@@ -9,6 +9,7 @@ import {
   KeyRound,
   Upload,
   Eye,
+  EyeOff,
   Check,
   X,
 } from "lucide-react";
@@ -46,6 +47,7 @@ const EMPTY = {
 
 const TeacherForm = ({ value, onChange, isEdit }) => {
   const fileRef = useRef(null);
+  const [showPw, setShowPw] = useState(false);
   const handleFile = async (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -104,23 +106,46 @@ const TeacherForm = ({ value, onChange, isEdit }) => {
             value={value.username}
             onChange={(e) => onChange({ username: e.target.value })}
             placeholder="sara.alm"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
             required
           />
         </div>
         <div className="space-y-1.5">
           <Label className="text-end block">
-            {isEdit ? "كلمة المرور (اتركيها فارغة لعدم التغيير)" : "كلمة المرور"}
+            {isEdit ? "كلمة المرور" : "كلمة المرور"}
           </Label>
-          <Input
-            data-testid="teacher-form-password"
-            type="text"
-            dir="ltr"
-            className="text-start"
-            value={value.password}
-            onChange={(e) => onChange({ password: e.target.value })}
-            placeholder="••••••"
-            required={!isEdit}
-          />
+          <div className="relative">
+            <Input
+              data-testid="teacher-form-password"
+              type={showPw ? "text" : "password"}
+              dir="ltr"
+              className="text-start pe-10"
+              value={value.password}
+              onChange={(e) => onChange({ password: e.target.value })}
+              placeholder={
+                isEdit ? "اتركها فارغة لعدم التغيير" : "كلمة مرور قوية"
+              }
+              autoComplete="new-password"
+              required={!isEdit}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute inset-y-0 end-2 flex items-center text-foreground/40 hover:text-foreground"
+              aria-label={showPw ? "إخفاء" : "إظهار"}
+              tabIndex={-1}
+            >
+              {showPw ? <Eye size={16} /> : <EyeOff size={16} />}
+            </button>
+          </div>
+          {isEdit && (
+            <p className="text-[11px] text-foreground/55 text-end">
+              لتغيير كلمة المرور اكتبي الجديدة. الحقل لا يعرض كلمة المرور
+              الحالية.
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label className="text-end block">الوصف الفرعي (اختياري)</Label>
@@ -178,7 +203,7 @@ export default function TeachersPage() {
     setForm({
       name: t.name,
       username: t.username,
-      password: "",
+      password: "", // never pre-fill — we don't expose the real password
       subtitle: t.subtitle || "",
       avatar: t.avatar || null,
       active: t.active,
@@ -190,15 +215,23 @@ export default function TeachersPage() {
       toast.error("الاسم واسم المستخدم مطلوبان");
       return;
     }
+    // Only include the password key if the admin actually typed a new one.
+    // updateTeacher is ALSO defensive and ignores empty/non-string passwords.
     const patch = {
-      name: form.name.trim(),
-      username: form.username.trim(),
-      subtitle: form.subtitle.trim(),
+      name: form.name,
+      username: form.username,
+      subtitle: form.subtitle,
       avatar: form.avatar,
     };
-    if (form.password) patch.password = form.password;
+    if (form.password && form.password.length > 0) {
+      patch.password = form.password;
+    }
     updateTeacher(editing.id, patch);
-    toast.success("تم تحديث بيانات المعلمة");
+    toast.success(
+      form.password
+        ? "تم تحديث بيانات المعلمة وكلمة المرور"
+        : "تم تحديث بيانات المعلمة",
+    );
     setEditing(null);
   };
 

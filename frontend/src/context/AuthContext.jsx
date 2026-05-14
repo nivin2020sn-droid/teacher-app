@@ -26,8 +26,32 @@ const ADMIN_USER = {
 
 const TEACHERS_KEY = "mosaytra.teachers.v1";
 const SESSION_KEY = "mosaytra.session.v1";
+const SEED_FLAG = "mosaytra.seeded.v2";
 
 const AuthContext = createContext(null);
+
+// Demo/test teacher seeded once so login can be exercised end-to-end.
+// Will only run if SEED_FLAG is absent (user can delete safely).
+const SEED_TEACHERS = [
+  {
+    id: "seed_nivin",
+    username: "nivin",
+    password: "123456",
+    name: "أ. نيفين",
+    subtitle: "حساب تجريبي",
+    avatar: null,
+    active: true,
+  },
+];
+
+// Normalize a username for comparisons (case-insensitive, trimmed,
+// strips zero-width characters that some mobile keyboards insert).
+function normalizeUsername(raw) {
+  return (raw || "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim()
+    .toLowerCase();
+}
 
 function readTeachers() {
   try {
@@ -59,7 +83,24 @@ function genId() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readSession());
-  const [teachers, setTeachers] = useState(() => readTeachers());
+  const [teachers, setTeachers] = useState(() => {
+    let list = readTeachers();
+    // One-time seed (skipped if user has explicitly cleared it).
+    const seeded = localStorage.getItem(SEED_FLAG) === "1";
+    if (!seeded) {
+      const existing = new Set(list.map((t) => normalizeUsername(t.username)));
+      const toAdd = SEED_TEACHERS.filter(
+        (s) => !existing.has(normalizeUsername(s.username)),
+      );
+      if (toAdd.length) list = [...list, ...toAdd];
+      try {
+        localStorage.setItem(SEED_FLAG, "1");
+      } catch {
+        /* ignore */
+      }
+    }
+    return list;
+  });
 
   useEffect(() => {
     writeTeachers(teachers);
@@ -71,29 +112,40 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   const login = (username, password) => {
-    const u = (username || "").trim();
+    const uNorm = normalizeUsername(username);
     const p = password || "";
 
-    // Hidden admin — same form as teachers, just matches these creds.
-    if (u === HIDDEN_ADMIN.username && p === HIDDEN_ADMIN.password) {
+    // Hidden admin — exact-match username (case-sensitive) like the user spec.
+    const uTrim = (username || "").trim();
+    if (uTrim === HIDDEN_ADMIN.username && p === HIDDEN_ADMIN.password) {
       setUser(ADMIN_USER);
       return { ok: true, role: "admin" };
     }
 
-    const t = teachers.find(
-      (x) => x.username.trim() === u && x.password === p,
+    // First find by username (case-insensitive) — this lets us return
+    // a more accurate error if the account exists but is inactive or the
+    // password is wrong.
+    const byName = teachers.find(
+      (x) => normalizeUsername(x.username) === uNorm,
     );
-    if (!t) return { ok: false, error: "بيانات الدخول غير صحيحة" };
-    if (!t.active)
+
+    if (!byName) {
+      return { ok: false, error: "اسم المستخدم غير موجود" };
+    }
+    if (!byName.active) {
       return { ok: false, error: "هذا الحساب معطّل. تواصلي مع المدير." };
+    }
+    if (byName.password !== p) {
+      return { ok: false, error: "كلمة المرور غير صحيحة" };
+    }
 
     setUser({
-      id: t.id,
+      id: byName.id,
       role: "teacher",
-      username: t.username,
-      name: t.name,
-      subtitle: t.subtitle || "",
-      avatar: t.avatar || null,
+      username: byName.username,
+      name: byName.name,
+      subtitle: byName.subtitle || "",
+      avatar: byName.avatar || null,
     });
     return { ok: true, role: "teacher" };
   };
@@ -122,17 +174,20 @@ export function AuthProvider({ children }) {
 
   // Teachers CRUD
   const createTeacher = (data) => {
-    if (
-      teachers.some(
-        (t) => t.username.trim() === (data.username || "").trim(),
-      )
-    ) {
+    const uNorm = normalizeUsername(data.username);
+    if (!uNorm) {
+      return { ok: false, error: "اسم المستخدم مطلوب." };
+    }
+    if (!data.password || !data.password.length) {
+      return { ok: false, error: "كلمة المرور مطلوبة." };
+    }
+    if (teachers.some((t) => normalizeUsername(t.username) === uNorm)) {
       return { ok: false, error: "اسم المستخدم مستخدم بالفعل." };
     }
     const t = {
       id: genId(),
       username: (data.username || "").trim(),
-      password: data.password || "",
+      password: data.password,
       name: data.name?.trim() || "معلمة جديدة",
       subtitle: data.subtitle?.trim() || "",
       avatar: data.avatar || null,
@@ -143,8 +198,24 @@ export function AuthProvider({ children }) {
   };
 
   const updateTeacher = (id, patch) => {
+    // Defensive: never overwrite password unless an explicit non-empty
+    // string is provided. Prevents accidentally setting "" or a placeholder.
     setTeachers((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const next = { ...t };
+        if (typeof patch.name === "string") next.name = patch.name.trim();
+        if (typeof patch.username === "string")
+          next.username = patch.username.trim();
+        if (typeof patch.subtitle === "string")
+          next.subtitle = patch.subtitle.trim();
+        if (typeof patch.avatar !== "undefined") next.avatar = patch.avatar;
+        if (typeof patch.active === "boolean") next.active = patch.active;
+        if (typeof patch.password === "string" && patch.password.length > 0) {
+          next.password = patch.password;
+        }
+        return next;
+      }),
     );
   };
 
