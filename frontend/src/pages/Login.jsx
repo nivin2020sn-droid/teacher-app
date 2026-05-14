@@ -23,7 +23,7 @@ export default function Login() {
   // Using <Navigate> avoids `window.location` which causes Render to
   // request /admin from the server and return 404 on Static Site.
   if (user) {
-    const dest = user.role === "admin" ? "/admin" : "/";
+    const dest = user?.role === "admin" ? "/admin" : "/";
     return <Navigate to={dest} replace />;
   }
 
@@ -39,7 +39,7 @@ export default function Login() {
     }
     const from = location.state?.from?.pathname;
     const dest =
-      res.role === "admin"
+      res?.role === "admin"
         ? "/admin"
         : from && from !== "/login"
           ? from

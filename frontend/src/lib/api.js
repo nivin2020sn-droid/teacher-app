@@ -5,6 +5,16 @@ import axios from "axios";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 export const API_BASE = `${BACKEND_URL}/api`;
 
+if (!BACKEND_URL && typeof window !== "undefined") {
+  // Visible diagnostic — without this var, the SPA falls back to relative
+  // /api/* calls that on Render's Static Site hit the SPA rewrite and return
+  // index.html, which then breaks JSON parsing on the client side.
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[mosaytra] REACT_APP_BACKEND_URL is not set. Set it in your hosting provider's environment variables (e.g. Render → Static Site → Environment) and redeploy.",
+  );
+}
+
 const TOKEN_KEY = "mosaytra.token.v1";
 
 export function getToken() {

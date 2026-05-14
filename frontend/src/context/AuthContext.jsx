@@ -60,10 +60,22 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     try {
       const res = await api.post("/auth/login", { username, password });
-      setToken(res.data.token);
-      setUser(res.data.user);
+      const data = res?.data;
+      // Defensive: backend must return { token, user: { role, ... } }.
+      // If the response is malformed (e.g. wrong REACT_APP_BACKEND_URL routing
+      // returned HTML/empty), surface a clear, localized error instead of
+      // crashing with "Cannot read properties of undefined".
+      if (!data || !data.token || !data.user || !data.user.role) {
+        return {
+          ok: false,
+          error:
+            "تعذّر تسجيل الدخول: استجابة غير متوقّعة من الخادم. تأكدي من إعداد REACT_APP_BACKEND_URL.",
+        };
+      }
+      setToken(data.token);
+      setUser(data.user);
       setAdminToken(null);
-      return { ok: true, role: res.data.user.role };
+      return { ok: true, role: data.user.role };
     } catch (e) {
       return { ok: false, error: extractError(e) };
     }
