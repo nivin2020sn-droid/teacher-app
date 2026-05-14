@@ -4,10 +4,19 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from .auth import hash_password, verify_password
 
-_mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+# Connection string is read from `MONGO_URI` (primary, e.g. Render / production)
+# with `MONGO_URL` accepted as an alias for the local dev environment.
+# NO fallback to localhost — fail fast if neither is configured.
+mongo_url = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
+if not mongo_url:
+    raise RuntimeError(
+        "MONGO_URI environment variable is missing "
+        "(also accepts MONGO_URL as an alias for local development)."
+    )
+
 _db_name = os.environ.get("DB_NAME", "teacher_app")
 
-client = AsyncIOMotorClient(_mongo_url)
+client = AsyncIOMotorClient(mongo_url)
 db = client[_db_name]
 
 
