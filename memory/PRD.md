@@ -46,6 +46,12 @@
 ## Test Credentials
 - Admin: `bsn.1988` / `12abAB!?` (seeded automatically from `.env` on startup)
 
+## Latest Verification (Feb 2026)
+- ✅ Standalone-architecture reversion confirmed: app mounts at `/api` only (no `/api/teacher` prefix, no KVD env vars).
+- ✅ E2E smoke: `/api/health`, `/api/auth/login` (admin + teacher), `/api/auth/me`,
+  `/api/teachers` (admin), `/api/subjects` create (teacher), `/api/students` list (teacher) — all green.
+- ✅ Frontend: login → `/admin` redirect, RTL Arabic UI rendering correctly.
+
 ## Backlog
 - **P1**: file upload to object storage (instead of base64 in Mongo)
 - **P1**: attendance, grades, assignments full CRUD
