@@ -1,7 +1,8 @@
-"""Mosaytra backend — FastAPI app entry point.
+"""Standalone runner for the teacher_app FastAPI module (used during local
+development inside this preview pod).
 
-Loads .env BEFORE importing anything that touches MONGO_URL / JWT_SECRET, so
-modules can read os.environ at import time.
+For production, the host project (kvd-backend) only needs the `teacher_app/`
+folder — see /app/backend/INTEGRATION.md for the 3-line integration recipe.
 """
 from pathlib import Path
 from dotenv import load_dotenv
@@ -12,42 +13,28 @@ load_dotenv(ROOT_DIR / ".env")
 import logging  # noqa: E402
 import os  # noqa: E402
 
-from fastapi import APIRouter, FastAPI  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
 from starlette.middleware.cors import CORSMiddleware  # noqa: E402
 
-from db import client, ensure_indexes, seed_admin  # noqa: E402
-from routes.auth_routes import router as auth_router  # noqa: E402
-from routes.teachers import router as teachers_router  # noqa: E402
-from routes.subjects import router as subjects_router  # noqa: E402
-from routes.students import router as students_router  # noqa: E402
-from routes.settings import router as settings_router  # noqa: E402
+from teacher_app import create_router as teacher_app_router  # noqa: E402
+from teacher_app.app import on_startup as teacher_app_startup  # noqa: E402
+from teacher_app.db import client as teacher_app_mongo_client  # noqa: E402
 
 
-app = FastAPI(title="Mosaytra API", version="1.0.0")
+app = FastAPI(title="Mosaytra (teacher_app) standalone", version="1.0.0")
 
-# Health / hello (kept for backward compat with template)
-api_router = APIRouter(prefix="/api")
+# Mount the entire teacher_app under /api/teacher.
+# This is the ONLY line the host backend (kvd-backend) needs to integrate it.
+app.include_router(teacher_app_router(), prefix="/api/teacher")
 
 
-@api_router.get("/")
+# Top-level health check kept under /api/ for backward compatibility with the
+# preview environment's existing route checks.
+@app.get("/api/")
 async def root():
-    return {"message": "Mosaytra API up"}
+    return {"message": "Mosaytra teacher_app standalone — mounted at /api/teacher"}
 
 
-@api_router.get("/health")
-async def health():
-    return {"status": "ok"}
-
-
-app.include_router(api_router)
-app.include_router(auth_router)
-app.include_router(teachers_router)
-app.include_router(subjects_router)
-app.include_router(students_router)
-app.include_router(settings_router)
-
-
-# CORS — for Bearer-token auth we don't need credentials, so wildcard is OK.
 _origins = os.environ.get("CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -67,11 +54,10 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def on_startup():
-    await ensure_indexes()
-    await seed_admin()
-    logger.info("Mosaytra API ready.")
+    await teacher_app_startup()
+    logger.info("teacher_app ready at /api/teacher")
 
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    client.close()
+    teacher_app_mongo_client.close()

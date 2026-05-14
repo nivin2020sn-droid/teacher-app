@@ -1,20 +1,18 @@
-"""Auth routes: /api/auth/login, /api/auth/me, /api/auth/preview/{id}"""
+"""Auth: /api/teacher/login, /api/teacher/me, /api/teacher/preview/{id}"""
 import os
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional
 
-from auth import (
+from ..auth import (
     create_access_token,
     get_current_user,
     require_admin,
     verify_password,
 )
-from db import db
+from ..db import db
 
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(tags=["teacher_app:auth"])
 
 
 class LoginBody(BaseModel):
@@ -22,30 +20,28 @@ class LoginBody(BaseModel):
     password: str = Field(..., min_length=1)
 
 
-class LoginResponse(BaseModel):
-    token: str
-    user: dict
-
-
 def _norm(u: str) -> str:
     return "".join(ch for ch in (u or "") if ord(ch) >= 32).strip().lower()
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login")
 async def login(body: LoginBody):
     u_norm = _norm(body.username)
     if not u_norm:
         raise HTTPException(status_code=400, detail="اسم المستخدم مطلوب")
 
-    # Admin first
-    admin_username = os.environ.get("ADMIN_USERNAME", "bsn.1988")
+    # Admin
+    admin_username = os.environ.get("TEACHER_APP_ADMIN_USERNAME", "bsn.1988")
     if u_norm == _norm(admin_username):
         admin_doc = await db.admins.find_one({"username": admin_username})
         if admin_doc and verify_password(
             body.password, admin_doc.get("password_hash", "")
         ):
             token = create_access_token(
-                user_id="admin", role="admin", username=admin_username
+                user_id="admin",
+                role="admin",
+                username=admin_username,
+                actor_role="admin",
             )
             return {
                 "token": token,
@@ -62,10 +58,8 @@ async def login(body: LoginBody):
             }
         raise HTTPException(status_code=401, detail="كلمة المرور غير صحيحة")
 
-    # Teachers (case-insensitive username)
-    teacher = await db.teachers.find_one(
-        {"username_lower": u_norm}, {"_id": 0}
-    )
+    # Teacher
+    teacher = await db.teachers.find_one({"username_lower": u_norm}, {"_id": 0})
     if not teacher:
         raise HTTPException(status_code=401, detail="اسم المستخدم غير موجود")
     if not teacher.get("active", True):
@@ -76,7 +70,10 @@ async def login(body: LoginBody):
         raise HTTPException(status_code=401, detail="كلمة المرور غير صحيحة")
 
     token = create_access_token(
-        user_id=teacher["id"], role="teacher", username=teacher["username"]
+        user_id=teacher["id"],
+        role="teacher",
+        username=teacher["username"],
+        actor_role="teacher",
     )
     teacher.pop("password_hash", None)
     teacher["role"] = "teacher"
@@ -89,36 +86,21 @@ async def me(user: dict = Depends(get_current_user)):
     return user
 
 
-class PreviewResponse(BaseModel):
-    token: str
-    user: dict
-
-
-@router.post("/preview/{teacher_id}", response_model=PreviewResponse)
+@router.post("/preview/{teacher_id}")
 async def preview_as_teacher(
     teacher_id: str, _admin: dict = Depends(require_admin)
 ):
-    t = await db.teachers.find_one({"id": teacher_id}, {"_id": 0, "password_hash": 0})
+    t = await db.teachers.find_one(
+        {"id": teacher_id}, {"_id": 0, "password_hash": 0}
+    )
     if not t:
         raise HTTPException(status_code=404, detail="معلمة غير موجودة")
-    # Special preview token: real subject is admin acting AS teacher.
-    # We encode user_id=teacher.id, role=teacher, but stamp actor_role=admin
-    # so server can authorise admin-only ops while routing teacher data.
-    import jwt
-    from auth import ACCESS_TOKEN_TTL_MINUTES, JWT_ALGORITHM, _secret
-    from datetime import timedelta
-
-    payload = {
-        "sub": t["id"],
-        "role": "teacher",
-        "actor_role": "admin",
-        "username": t["username"],
-        "type": "access",
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc)
-        + timedelta(minutes=ACCESS_TOKEN_TTL_MINUTES),
-    }
-    token = jwt.encode(payload, _secret(), algorithm=JWT_ALGORITHM)
+    token = create_access_token(
+        user_id=t["id"],
+        role="teacher",
+        username=t["username"],
+        actor_role="admin",  # admin-acting-as-teacher
+    )
     t["role"] = "teacher"
     t["actor_role"] = "admin"
     return {"token": token, "user": t}

@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
       return;
     }
     api
-      .get("/auth/me")
+      .get("/me")
       .then((res) => {
         if (!cancelled) setUser(res.data);
       })
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     try {
-      const res = await api.post("/auth/login", { username, password });
+      const res = await api.post("/login", { username, password });
       setToken(res.data.token);
       setUser(res.data.user);
       setAdminToken(null);
@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
   const previewAsTeacher = async (teacherId) => {
     try {
       const currentToken = getToken();
-      const res = await api.post(`/auth/preview/${teacherId}`);
+      const res = await api.post(`/preview/${teacherId}`);
       setAdminToken(currentToken);
       setToken(res.data.token);
       setUser(res.data.user);
@@ -94,7 +94,7 @@ export function AuthProvider({ children }) {
     setToken(adminToken);
     setAdminToken(null);
     try {
-      const res = await api.get("/auth/me");
+      const res = await api.get("/me");
       setUser(res.data);
     } catch {
       logout();

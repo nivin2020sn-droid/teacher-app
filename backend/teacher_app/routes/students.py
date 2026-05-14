@@ -1,26 +1,32 @@
-"""Students (teacher-scoped) with embedded parents/guardians (unlimited)."""
+"""Students (teacher-scoped) with embedded guardians/parents (unlimited)."""
 import uuid
-from typing import Optional, List
 from datetime import datetime, timezone
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from auth import get_current_user
-from db import db
+from ..auth import get_current_user
+from ..db import db
 
 
-router = APIRouter(prefix="/api/students", tags=["students"])
+router = APIRouter(prefix="/students", tags=["teacher_app:students"])
 
 
 def _gen_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:8]}"
 
 
-class Parent(BaseModel):
+def _require_teacher(user: dict) -> str:
+    if user.get("role") != "teacher":
+        raise HTTPException(status_code=403, detail="Teachers only")
+    return user["id"]
+
+
+class Guardian(BaseModel):
     id: Optional[str] = None
     name: str = Field(..., min_length=1)
-    relation: Optional[str] = ""  # صلة القرابة
+    relation: Optional[str] = ""
     phone: Optional[str] = ""
     email: Optional[str] = ""
     address: Optional[str] = ""
@@ -28,10 +34,10 @@ class Parent(BaseModel):
 
 class StudentCreate(BaseModel):
     name: str = Field(..., min_length=1)
-    birth_date: Optional[str] = ""  # ISO date string
+    birth_date: Optional[str] = ""
     address: Optional[str] = ""
     notes: Optional[str] = ""
-    parents: List[Parent] = []
+    parents: List[Guardian] = []
 
 
 class StudentUpdate(BaseModel):
@@ -39,39 +45,32 @@ class StudentUpdate(BaseModel):
     birth_date: Optional[str] = None
     address: Optional[str] = None
     notes: Optional[str] = None
-    parents: Optional[List[Parent]] = None
+    parents: Optional[List[Guardian]] = None
 
 
-def _require_teacher_scope(user: dict) -> str:
-    if user.get("role") != "teacher":
-        raise HTTPException(status_code=403, detail="Teachers only")
-    return user["id"]
-
-
-def _normalize_parents(parents: List[Parent]) -> List[dict]:
+def _normalize_parents(parents: List[Guardian]) -> List[dict]:
     out = []
     for p in parents:
         pd = p.model_dump()
         if not pd.get("id"):
-            pd["id"] = _gen_id("p")
+            pd["id"] = _gen_id("g")
         out.append(pd)
     return out
 
 
 @router.get("")
 async def list_students(user: dict = Depends(get_current_user)):
-    tid = _require_teacher_scope(user)
-    items = await db.students.find(
-        {"teacher_id": tid}, {"_id": 0}
-    ).sort("created_at", 1).to_list(1000)
-    return items
+    tid = _require_teacher(user)
+    return await db.students.find({"teacher_id": tid}, {"_id": 0}).sort(
+        "created_at", 1
+    ).to_list(1000)
 
 
 @router.post("", status_code=201)
 async def create_student(
     body: StudentCreate, user: dict = Depends(get_current_user)
 ):
-    tid = _require_teacher_scope(user)
+    tid = _require_teacher(user)
     doc = {
         "id": _gen_id("s"),
         "teacher_id": tid,
@@ -93,11 +92,10 @@ async def update_student(
     body: StudentUpdate,
     user: dict = Depends(get_current_user),
 ):
-    tid = _require_teacher_scope(user)
+    tid = _require_teacher(user)
     s = await db.students.find_one({"id": student_id, "teacher_id": tid})
     if not s:
         raise HTTPException(status_code=404, detail="طالب غير موجود")
-
     update: dict = {}
     if body.name is not None:
         update["name"] = body.name.strip()
@@ -109,7 +107,6 @@ async def update_student(
         update["notes"] = body.notes
     if body.parents is not None:
         update["parents"] = _normalize_parents(body.parents)
-
     if update:
         await db.students.update_one(
             {"id": student_id, "teacher_id": tid}, {"$set": update}
@@ -123,7 +120,7 @@ async def update_student(
 async def delete_student(
     student_id: str, user: dict = Depends(get_current_user)
 ):
-    tid = _require_teacher_scope(user)
+    tid = _require_teacher(user)
     res = await db.students.delete_one({"id": student_id, "teacher_id": tid})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="طالب غير موجود")

@@ -1,13 +1,13 @@
-"""Global app settings — admin writes, everyone reads."""
-from typing import Optional, Any
-from fastapi import APIRouter, Depends, HTTPException
+"""Global app settings — admin writes, all authenticated users read."""
+from typing import Optional
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from auth import get_current_user, require_admin
-from db import db
+from ..auth import get_current_user, require_admin
+from ..db import db
 
 
-router = APIRouter(prefix="/api/settings", tags=["settings"])
+router = APIRouter(prefix="/settings", tags=["teacher_app:settings"])
 
 DEFAULT = {
     "appName": "مسيطره",
@@ -29,7 +29,7 @@ class SettingsUpdate(BaseModel):
 
 
 @router.get("")
-async def get_settings(user: dict = Depends(get_current_user)):
+async def get_settings(_user: dict = Depends(get_current_user)):
     doc = await db.app_settings.find_one({"key": "global"}, {"_id": 0, "key": 0})
     return {**DEFAULT, **(doc or {})}
 
@@ -38,7 +38,7 @@ async def get_settings(user: dict = Depends(get_current_user)):
 async def update_settings(
     body: SettingsUpdate, _admin: dict = Depends(require_admin)
 ):
-    patch = {k: v for k, v in body.model_dump(exclude_unset=True).items()}
+    patch = body.model_dump(exclude_unset=True)
     await db.app_settings.update_one(
         {"key": "global"}, {"$set": patch}, upsert=True
     )
