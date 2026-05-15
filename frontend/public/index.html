@@ -2,21 +2,52 @@
 <html lang="ar" dir="rtl">
     <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#7c5cff" />
-        <meta name="description" content="مسيطره — لوحة تحكم المعلمة" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+        <!-- PWA core -->
+        <meta name="theme-color" content="#7C4DFF" />
+        <meta name="background-color" content="#F8F4FF" />
+        <meta name="description" content="مسيطرة — لوحة تحكم المعلمة" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/favicon.ico" />
+
+        <!-- iOS / Safari "Add to Home Screen" -->
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="مسيطرة" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-128.png" />
+
+        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
             href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cairo:wght@600;700;800&display=swap"
             rel="stylesheet"
         />
-        <title>مسيطره | لوحة تحكم المعلمة</title>
+        <title>مسيطرة | لوحة تحكم المعلمة</title>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
         <div id="root"></div>
+        <script>
+            // Register the service worker so the app becomes installable
+            // (and works offline for the static shell).
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", function () {
+                    navigator.serviceWorker
+                        .register("/service-worker.js")
+                        .catch(function (err) {
+                            // eslint-disable-next-line no-console
+                            console.warn("SW register failed:", err);
+                        });
+                });
+            }
+        </script>
     </body>
 </html>
