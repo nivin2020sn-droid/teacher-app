@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import { api, extractError } from "../lib/api";
-import { useAuth } from "./AuthContext";
 
 const DEFAULT_SETTINGS = {
   appName: "مسيطره",
@@ -77,16 +76,12 @@ function applyToRoot(settings) {
 }
 
 export function AppSettingsProvider({ children }) {
-  const { user } = useAuth();
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!user) {
-      // Fall back to defaults until we have a session.
-      setSettings(DEFAULT_SETTINGS);
-      return;
-    }
+    // GET /settings is public — fetch unconditionally so branding (app name,
+    // logo, colors, background) renders correctly on the login page too.
     setLoading(true);
     try {
       const res = await api.get("/settings");
@@ -96,7 +91,7 @@ export function AppSettingsProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     refresh();

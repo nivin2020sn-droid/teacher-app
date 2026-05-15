@@ -1,9 +1,10 @@
-"""Global app settings — admin writes, all authenticated users read."""
+"""Global app settings — public read (so login screen can render branding),
+admin-only write."""
 from typing import Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from ..auth import get_current_user, require_admin
+from ..auth import require_admin
 from ..db import db
 
 
@@ -29,7 +30,8 @@ class SettingsUpdate(BaseModel):
 
 
 @router.get("")
-async def get_settings(_user: dict = Depends(get_current_user)):
+async def get_settings():
+    """Public — branding must be available before login."""
     doc = await db.app_settings.find_one({"key": "global"}, {"_id": 0, "key": 0})
     return {**DEFAULT, **(doc or {})}
 
