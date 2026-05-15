@@ -2,3 +2,35 @@
     min-height: 100vh;
     background-color: hsl(var(--app-bg));
 }
+
+/* Print: hide app chrome, show only #printable-area. */
+@media print {
+    body {
+        background: #fff !important;
+    }
+    .App {
+        background: #fff !important;
+    }
+    aside,
+    header[data-testid="app-topbar"],
+    [data-testid="app-sidebar"] {
+        display: none !important;
+    }
+    .print\:hidden {
+        display: none !important;
+    }
+    main,
+    #root {
+        background: #fff !important;
+    }
+    #printable-area {
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    @page {
+        size: A4;
+        margin: 14mm 12mm;
+    }
+}

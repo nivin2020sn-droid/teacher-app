@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Users,
   Plus,
@@ -12,6 +13,7 @@ import {
   StickyNote,
   Check,
   X,
+  FileText,
 } from "lucide-react";
 import { useStudents } from "../context/StudentsContext";
 import { useAuth } from "../context/AuthContext";
@@ -389,6 +391,17 @@ export default function StudentsPage() {
               )}
 
               <div className="flex gap-2 pt-2 border-t border-border/40">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  asChild
+                  data-testid={`open-student-${s.id}`}
+                  className="rounded-xl"
+                >
+                  <Link to={`/students/${s.id}`}>
+                    <FileText size={14} className="me-1" /> الملف الشامل
+                  </Link>
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"

@@ -11,7 +11,9 @@ import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import Placeholder from "./pages/Placeholder";
 import StudentsPage from "./pages/StudentsPage";
+import StudentProfilePage from "./pages/StudentProfilePage";
 import AttendancePage from "./pages/AttendancePage";
+import ReportsPage from "./pages/ReportsPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import TeachersPage from "./pages/admin/TeachersPage";
 import SubjectsPage from "./pages/admin/SubjectsPage";
@@ -37,6 +39,7 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/students" element={<StudentsPage />} />
+                  <Route path="/students/:id" element={<StudentProfilePage />} />
                   <Route path="/subjects" element={<SubjectsPage />} />
 
                   <Route
@@ -72,12 +75,7 @@ function App() {
                   />
                   <Route
                     path="/reports"
-                    element={
-                      <Placeholder
-                        title="التقارير"
-                        description="تقارير شاملة عن أداء الطلاب وتقدّمهم."
-                      />
-                    }
+                    element={<ReportsPage />}
                   />
 
                   <Route

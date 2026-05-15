@@ -12,6 +12,7 @@ from .routes.students import router as students_router
 from .routes.guardians import router as guardians_router
 from .routes.settings import router as settings_router
 from .routes.attendance import router as attendance_router
+from .routes.reports import router as reports_router
 
 
 def create_router() -> APIRouter:
@@ -38,6 +39,7 @@ def create_router() -> APIRouter:
     router.include_router(guardians_router)
     router.include_router(settings_router)
     router.include_router(attendance_router)
+    router.include_router(reports_router)
 
     @router.get("/health", tags=["health"])
     async def health():
