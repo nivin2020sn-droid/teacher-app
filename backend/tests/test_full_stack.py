@@ -288,9 +288,10 @@ class TestPreview:
         assert me["actor_role"] == "admin"
         # can list teacher's subjects (scoped)
         assert s.get(f"{API}/subjects", headers=_h(ptok)).status_code == 200
-        # NOTE: actor_role=admin + role=teacher should still be allowed admin-only
-        # endpoints per require_admin (which only checks actor_role).
-        assert s.get(f"{API}/teachers", headers=_h(ptok)).status_code == 200
+        # Admin-previewing-teacher MUST NOT keep admin powers — require_admin
+        # enforces BOTH role==admin AND actor_role==admin (fixed in iteration_1
+        # follow-up). Exit preview first to manage teachers.
+        assert s.get(f"{API}/teachers", headers=_h(ptok)).status_code == 403
 
     def test_preview_requires_admin(self, s, teacher_data):
         t_doc, tt, _u = teacher_data

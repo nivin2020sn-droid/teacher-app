@@ -51,6 +51,8 @@
 - ✅ E2E smoke: `/api/health`, `/api/auth/login` (admin + teacher), `/api/auth/me`,
   `/api/teachers` (admin), `/api/subjects` create (teacher), `/api/students` list (teacher) — all green.
 - ✅ Frontend: login → `/admin` redirect, RTL Arabic UI rendering correctly.
+- ✅ **PWA** (Feb 2026): installable on Android & iOS — manifest.json, service-worker, 9 icons (72→512 + maskable 512 + apple-touch 180), all required meta tags.
+- ✅ **Attendance system** (Feb 2026): seatless card grid, per-day records, work-hour settings, alphabetical & manual (drag-and-drop) views, auto-bootstrap as present, absent→present-in-work-hours auto-flips to late with arrival_time stamping, early_leave stamps departure_time, dialog for excused/note. 17/17 backend pytest cases pass.
 
 ## Backlog
 - **P1**: file upload to object storage (instead of base64 in Mongo)

@@ -29,6 +29,7 @@ import { Textarea } from "../components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
@@ -179,6 +180,9 @@ function StatusEditor({ open, student, current, onClose, onSave }) {
       >
         <DialogHeader>
           <DialogTitle className="text-end">{student.name}</DialogTitle>
+          <DialogDescription className="text-end">
+            اختاري حالة الحضور وأضيفي ملاحظة إن أردتِ.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
