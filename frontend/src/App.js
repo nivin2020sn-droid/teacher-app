@@ -17,6 +17,7 @@ import ReportsPage from "./pages/ReportsPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import TeachersPage from "./pages/admin/TeachersPage";
 import SubjectsPage from "./pages/admin/SubjectsPage";
+import BackupPage from "./pages/admin/BackupPage";
 import { Toaster } from "./components/ui/sonner";
 
 function App() {
@@ -91,6 +92,14 @@ function App() {
                     element={
                       <ProtectedRoute requireRole="admin">
                         <TeachersPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/backup"
+                    element={
+                      <ProtectedRoute requireRole="admin">
+                        <BackupPage />
                       </ProtectedRoute>
                     }
                   />

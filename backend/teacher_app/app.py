@@ -13,6 +13,7 @@ from .routes.guardians import router as guardians_router
 from .routes.settings import router as settings_router
 from .routes.attendance import router as attendance_router
 from .routes.reports import router as reports_router
+from .routes.backup import router as backup_router, start_scheduler
 
 
 def create_router() -> APIRouter:
@@ -40,6 +41,7 @@ def create_router() -> APIRouter:
     router.include_router(settings_router)
     router.include_router(attendance_router)
     router.include_router(reports_router)
+    router.include_router(backup_router)
 
     @router.get("/health", tags=["health"])
     async def health():
@@ -49,8 +51,10 @@ def create_router() -> APIRouter:
 
 
 async def on_startup():
-    """Create indexes and seed the hidden admin account (idempotent)."""
+    """Create indexes, seed the hidden admin account, and kick off the daily
+    backup scheduler (idempotent)."""
     from .db import ensure_indexes, seed_admin
 
     await ensure_indexes()
     await seed_admin()
+    start_scheduler()

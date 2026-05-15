@@ -6,6 +6,7 @@ import {
 } from "../../context/AppSettingsContext";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../ui/button";
+import SyncIndicator from "./SyncIndicator";
 
 export const TopBar = ({ onMenuClick }) => {
   const { settings } = useAppSettings();
@@ -80,6 +81,8 @@ export const TopBar = ({ onMenuClick }) => {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        <SyncIndicator />
+
         {!isAdmin && (
           <button
             type="button"

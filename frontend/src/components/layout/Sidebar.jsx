@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   BookCopy,
   ArrowLeftRight,
+  DatabaseBackup,
 } from "lucide-react";
 import { useAppSettings } from "../../context/AppSettingsContext";
 import { useAuth } from "../../context/AuthContext";
@@ -32,6 +33,7 @@ const TEACHER_NAV = [
 const ADMIN_NAV = [
   { to: "/admin", label: "لوحة المدير", icon: ShieldCheck, end: true },
   { to: "/admin/teachers", label: "إدارة المعلمات", icon: Users },
+  { to: "/admin/backup", label: "النسخ الاحتياطي", icon: DatabaseBackup },
   { to: "/settings", label: "إعدادات التطبيق", icon: SettingsIcon },
 ];
 
