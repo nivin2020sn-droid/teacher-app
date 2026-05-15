@@ -6,7 +6,8 @@ import {
   useMemo,
   useState,
 } from "react";
-import { api, extractError } from "../lib/api";
+import { extractError } from "../lib/api";
+import { offlineGet, offlineMutate } from "../lib/offlineApi";
 import { useAuth } from "./AuthContext";
 
 const SubjectsContext = createContext(null);
@@ -23,7 +24,7 @@ export function SubjectsProvider({ children }) {
     }
     setLoading(true);
     try {
-      const res = await api.get("/subjects");
+      const res = await offlineGet("/subjects");
       setSubjects(res.data);
     } catch {
       setSubjects([]);
@@ -36,11 +37,19 @@ export function SubjectsProvider({ children }) {
     refresh();
   }, [refresh, user]);
 
+  useEffect(() => {
+    const h = (e) => {
+      if (e.detail?.kind === "synced") refresh();
+    };
+    window.addEventListener("mosaytra:sync", h);
+    return () => window.removeEventListener("mosaytra:sync", h);
+  }, [refresh]);
+
   const createSubject = async (data) => {
     try {
-      const res = await api.post("/subjects", data);
+      const res = await offlineMutate("POST", "/subjects", data);
       setSubjects((prev) => [...prev, res.data]);
-      return { ok: true, subject: res.data };
+      return { ok: true, subject: res.data, queued: res.queued };
     } catch (e) {
       return { ok: false, error: extractError(e) };
     }
@@ -48,13 +57,12 @@ export function SubjectsProvider({ children }) {
 
   const updateSubject = async (id, patch) => {
     try {
-      const res = await api.patch(`/subjects/${id}`, patch);
+      const res = await offlineMutate("PATCH", `/subjects/${id}`, patch);
       setSubjects((prev) =>
-        prev.map((s) => (s.id === id ? res.data : s.id === res.data.id ? res.data : s)),
+        prev.map((s) => (s.id === id ? { ...s, ...res.data } : s)),
       );
-      // If is_current toggled, refresh to clear others
       if (patch.is_current === true) await refresh();
-      return { ok: true };
+      return { ok: true, queued: res.queued };
     } catch (e) {
       return { ok: false, error: extractError(e) };
     }
@@ -62,9 +70,9 @@ export function SubjectsProvider({ children }) {
 
   const deleteSubject = async (id) => {
     try {
-      await api.delete(`/subjects/${id}`);
+      const res = await offlineMutate("DELETE", `/subjects/${id}`);
       await refresh();
-      return { ok: true };
+      return { ok: true, queued: res.queued };
     } catch (e) {
       return { ok: false, error: extractError(e) };
     }

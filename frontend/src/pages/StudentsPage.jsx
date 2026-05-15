@@ -330,7 +330,18 @@ export default function StudentsPage() {
                   {s.name.charAt(0)}
                 </div>
                 <div className="flex-1 text-end">
-                  <div className="font-extrabold text-foreground">{s.name}</div>
+                  <div className="font-extrabold text-foreground flex items-center justify-end gap-2">
+                    {(s._local || s._localPending) && (
+                      <span
+                        data-testid={`sync-badge-${s.id}`}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold"
+                        title="بانتظار المزامنة مع الخادم"
+                      >
+                        محلي
+                      </span>
+                    )}
+                    <span>{s.name}</span>
+                  </div>
                   {s.birth_date && (
                     <div className="text-xs text-foreground/55 mt-0.5 flex items-center justify-end gap-1">
                       <span>{s.birth_date}</span>

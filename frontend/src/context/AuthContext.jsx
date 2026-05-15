@@ -17,6 +17,9 @@ export function AuthProvider({ children }) {
   const [adminToken, setAdminToken] = useState(null); // for "exit preview"
 
   // Bootstrap: if we have a token, fetch /me to validate it.
+  // Important for offline-first: a network failure must NOT log the user out;
+  // only a real 401/403 from the server should clear the token. Otherwise
+  // every offline app-open would kick the teacher to the login screen.
   useEffect(() => {
     let cancelled = false;
     if (!getToken()) {
@@ -28,10 +31,26 @@ export function AuthProvider({ children }) {
       .then((res) => {
         if (!cancelled) setUser(res.data);
       })
-      .catch(() => {
-        if (!cancelled) {
+      .catch((err) => {
+        if (cancelled) return;
+        const code = err?.response?.status;
+        if (code === 401 || code === 403) {
           setToken(null);
           setUser(false);
+        } else {
+          // Network / server down: keep the token, synthesise a minimal user
+          // from local storage so the SPA can still render protected pages.
+          setUser({
+            id: "offline",
+            username: "offline",
+            role: "teacher",
+            actor_role: "teacher",
+            name: "وضع غير متصل",
+            subtitle: "سيتم تحديث بياناتك عند عودة الاتصال",
+            avatar: null,
+            active: true,
+            _offline: true,
+          });
         }
       });
     return () => {

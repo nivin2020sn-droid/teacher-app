@@ -20,7 +20,8 @@ import {
   GripVertical,
   Loader2,
 } from "lucide-react";
-import { api, extractError } from "../lib/api";
+import { extractError } from "../lib/api";
+import { offlineGet, offlineMutate } from "../lib/offlineApi";
 import { useStudents } from "../context/StudentsContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -314,7 +315,7 @@ export default function AttendancePage() {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/attendance?date=${date}`);
+      const res = await offlineGet(`/attendance?date=${date}`);
       setSettings(res.data.settings);
       setRecords(res.data.records || []);
     } catch (e) {
@@ -330,7 +331,7 @@ export default function AttendancePage() {
 
   const saveSetting = async (patch) => {
     try {
-      const res = await api.patch("/attendance/settings", patch);
+      const res = await offlineMutate("PATCH", "/attendance/settings", patch);
       setSettings(res.data);
     } catch (e) {
       toast.error(extractError(e));
@@ -339,13 +340,14 @@ export default function AttendancePage() {
 
   const setStudentStatus = async (studentId, payload) => {
     try {
-      const res = await api.put(
+      const res = await offlineMutate(
+        "PUT",
         `/attendance/${studentId}?date=${date}`,
         payload,
       );
       setRecords((prev) => {
         const others = prev.filter((r) => r.student_id !== studentId);
-        return [...others, res.data];
+        return [...others, { ...res.data, student_id: studentId }];
       });
     } catch (e) {
       toast.error(extractError(e));
@@ -354,8 +356,12 @@ export default function AttendancePage() {
 
   const markAllPresent = async () => {
     try {
-      const res = await api.post(`/attendance/mark-all-present?date=${date}`);
-      setRecords(res.data.records || []);
+      const res = await offlineMutate(
+        "POST",
+        `/attendance/mark-all-present?date=${date}`,
+      );
+      if (res.data?.records) setRecords(res.data.records);
+      else await refresh();
       toast.success("تم تعليم جميع الطلاب كحاضرين");
     } catch (e) {
       toast.error(extractError(e));
