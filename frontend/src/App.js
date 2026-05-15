@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import Placeholder from "./pages/Placeholder";
 import StudentsPage from "./pages/StudentsPage";
+import AttendancePage from "./pages/AttendancePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import TeachersPage from "./pages/admin/TeachersPage";
 import SubjectsPage from "./pages/admin/SubjectsPage";
@@ -40,12 +41,7 @@ function App() {
 
                   <Route
                     path="/attendance"
-                    element={
-                      <Placeholder
-                        title="الحضور"
-                        description="تسجيل حضور وغياب الطلاب يوميًا."
-                      />
-                    }
+                    element={<AttendancePage />}
                   />
                   <Route
                     path="/grades"
