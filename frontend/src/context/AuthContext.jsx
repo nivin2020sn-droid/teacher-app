@@ -76,6 +76,22 @@ export function AuthProvider({ children }) {
     }
   }, [user, refreshTeachers]);
 
+  // If we synthesised an "offline user" because /auth/me failed during boot,
+  // re-fetch the real one as soon as the browser comes back online so the
+  // top-bar avatar/name update without requiring a manual reload.
+  useEffect(() => {
+    if (!user?._offline) return;
+    const tryRefetch = () => {
+      api
+        .get("/auth/me")
+        .then((res) => setUser(res.data))
+        .catch(() => {});
+    };
+    window.addEventListener("online", tryRefetch);
+    if (navigator.onLine) tryRefetch();
+    return () => window.removeEventListener("online", tryRefetch);
+  }, [user]);
+
   const login = async (username, password) => {
     try {
       const res = await api.post("/auth/login", { username, password });

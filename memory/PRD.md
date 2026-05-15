@@ -54,6 +54,7 @@
 - ✅ **PWA** (Feb 2026): installable on Android & iOS — manifest.json, service-worker, 9 icons (72→512 + maskable 512 + apple-touch 180), all required meta tags.
 - ✅ **Attendance system** (Feb 2026): seatless card grid, per-day records, work-hour settings, alphabetical & manual (drag-and-drop) views, auto-bootstrap as present, absent→present-in-work-hours auto-flips to late with arrival_time stamping, early_leave stamps departure_time, dialog for excused/note. 17/17 backend pytest cases pass.
 - ✅ **Student profile + Reports** (Feb 2026): 7-tab StudentProfilePage (`/students/:id`) — profile/attendance fully wired to real DB; grades/assignments/behavior/activities show explicit "قريبًا" empty states (no demo data). ReportsPage with 7 cards (3 ready, 4 marked "قريبًا"), class-wide attendance report with date range + smart-status (urgent/watch/stable) + per-student rows + window.print()/@media print → PDF. 13/13 backend pytest cases pass.
+- ✅ **Offline-first** (Feb 2026): IndexedDB cache (via idb-keyval, db=`mosaytra-offline`) + persistent sync queue. Wraps students/subjects/attendance. Offline banner (offline/syncing/synced/error). Per-item "محلي" badge for unsynced records. Last-write-wins via server `updated_at`. Drains on `online` + `focus` events (iOS-friendly). `/auth/me` network failure no longer logs the user out — synthesises a temporary offline user, auto-refetches real user on reconnect. 9/9 offline behaviours + 4/4 regression tests pass.
 
 ## Backlog
 - **P1**: file upload to object storage (instead of base64 in Mongo)
