@@ -2,7 +2,9 @@
 // /api prefix, and attaches the Bearer token on every request.
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
+// Strip any trailing slash so `${URL}/api` never produces `//api`.
+const RAW_BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
+const BACKEND_URL = RAW_BACKEND_URL.replace(/\/+$/, "");
 export const API_BASE = `${BACKEND_URL}/api`;
 
 if (!BACKEND_URL && typeof window !== "undefined") {
@@ -34,7 +36,12 @@ export function setToken(t) {
   }
 }
 
-export const api = axios.create({ baseURL: API_BASE });
+export const api = axios.create({
+  baseURL: API_BASE,
+  // Render free instances spin down after ~15 min of inactivity; first request
+  // may take ~50s to wake the server.
+  timeout: 90000,
+});
 
 api.interceptors.request.use((config) => {
   const t = getToken();
@@ -44,6 +51,14 @@ api.interceptors.request.use((config) => {
 
 // Centralised error → friendly message.
 export function extractError(err) {
+  // Network-level failure (CORS rejection, server unreachable, DNS, etc.).
+  // axios surfaces this as `code: "ERR_NETWORK"` with no response.
+  if (err?.code === "ERR_NETWORK" || (err && !err.response && err.request)) {
+    return "تعذّر الاتصال بالخادم. تحقّقي من اتصال الإنترنت وأن إعدادات CORS في الخادم تسمح بنطاق هذا الموقع.";
+  }
+  if (err?.code === "ECONNABORTED") {
+    return "انتهت مهلة الاتصال بالخادم. حاولي مرة أخرى بعد لحظات.";
+  }
   const d = err?.response?.data?.detail;
   if (typeof d === "string") return d;
   if (Array.isArray(d))
