@@ -72,7 +72,7 @@ const ParentEditor = ({ value, onChange, onRemove, index }) => (
           className="text-end"
           value={value.name}
           onChange={(e) => onChange({ name: e.target.value })}
-          placeholder="مثال: أحمد المالكي"
+          placeholder="مثال: سليمان نصر"
         />
       </div>
       <div className="space-y-1.5">
@@ -143,7 +143,7 @@ const StudentForm = ({ value, onChange }) => {
             className="text-end"
             value={value.name}
             onChange={(e) => onChange({ name: e.target.value })}
-            placeholder="مثال: محمد أحمد"
+            placeholder="مثال: أحمد نصر"
             required
           />
         </div>

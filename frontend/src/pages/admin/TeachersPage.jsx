@@ -93,7 +93,7 @@ const TeacherForm = ({ value, onChange, isEdit }) => {
             className="text-end"
             value={value.name}
             onChange={(e) => onChange({ name: e.target.value })}
-            placeholder="مثال: أ. سارة المالكي"
+            placeholder="مثال: نيڤين نصر"
             required
           />
         </div>
