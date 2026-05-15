@@ -54,9 +54,17 @@ function daysAgoISO(n) {
 
 function EmptyState({ icon: Icon, title, hint }) {
   return (
-    <div className="rounded-3xl bg-white p-12 text-center border border-border/60 space-y-2">
+    <div
+      data-testid="empty-state"
+      className="rounded-3xl bg-white p-12 text-center border border-border/60 space-y-3"
+    >
       <Icon size={36} className="mx-auto text-foreground/30" />
-      <p className="font-bold text-foreground/75">{title}</p>
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-extrabold">
+          قريبًا
+        </span>
+        <p className="font-bold text-foreground/75">{title}</p>
+      </div>
       {hint && <p className="text-xs text-foreground/55">{hint}</p>}
     </div>
   );

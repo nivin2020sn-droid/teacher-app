@@ -53,6 +53,7 @@
 - ✅ Frontend: login → `/admin` redirect, RTL Arabic UI rendering correctly.
 - ✅ **PWA** (Feb 2026): installable on Android & iOS — manifest.json, service-worker, 9 icons (72→512 + maskable 512 + apple-touch 180), all required meta tags.
 - ✅ **Attendance system** (Feb 2026): seatless card grid, per-day records, work-hour settings, alphabetical & manual (drag-and-drop) views, auto-bootstrap as present, absent→present-in-work-hours auto-flips to late with arrival_time stamping, early_leave stamps departure_time, dialog for excused/note. 17/17 backend pytest cases pass.
+- ✅ **Student profile + Reports** (Feb 2026): 7-tab StudentProfilePage (`/students/:id`) — profile/attendance fully wired to real DB; grades/assignments/behavior/activities show explicit "قريبًا" empty states (no demo data). ReportsPage with 7 cards (3 ready, 4 marked "قريبًا"), class-wide attendance report with date range + smart-status (urgent/watch/stable) + per-student rows + window.print()/@media print → PDF. 13/13 backend pytest cases pass.
 
 ## Backlog
 - **P1**: file upload to object storage (instead of base64 in Mongo)
